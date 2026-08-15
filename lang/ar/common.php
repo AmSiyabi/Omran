@@ -77,4 +77,22 @@ return [
     // العملة — الريال العماني بثلاث منازل عشرية دائماً
     'omr' => 'ر.ع.',
 
+    // لوحة التحكم
+    'welcome' => 'مرحباً',
+    'nav_home' => 'الرئيسية',
+    'nav_courses' => 'الدورات',
+    'nav_finance' => 'المالية',
+    'nav_more' => 'المزيد',
+    'main_navigation' => 'التنقل الرئيسي',
+    'coming_soon' => 'قريباً',
+    'enabled' => 'مفعّل',
+    'not_enabled' => 'غير مفعّل',
+    'manage' => 'إدارة',
+    'dashboard_finance_placeholder' => 'الوضع النقدي والإيرادات ومؤشر ضريبة القيمة المضافة — تُبنى في المرحلة السادسة.',
+    'dashboard_courses_placeholder' => 'الدورات القادمة والتسجيلات — تُبنى في المرحلة الثانية.',
+    'placeholder_courses_title' => 'إدارة الدورات تُبنى في المرحلة الثانية',
+    'placeholder_courses_description' => 'هنا ستُدار الدورات والدفعات والجلسات والمدربون.',
+    'placeholder_finance_title' => 'النظام المالي يُبنى في المرحلة الخامسة',
+    'placeholder_finance_description' => 'هنا ستُسجل الإيرادات والمصروفات وتُدار التصفيات وكشوف الشركاء.',
+
 ];

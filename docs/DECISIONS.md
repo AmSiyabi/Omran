@@ -100,3 +100,68 @@ overflow" at 375px. `scripts/screenshot.mjs` (dev-dependency `puppeteer-core`,
 drives the system Chrome) emulates exact viewports, asserts
 `scrollWidth == innerWidth`, and captures full-page screenshots. Use it for
 every phase's responsive acceptance run.
+Addendum (Phase 1): pass `captureBeyondViewport: false` — full-page capture of
+RTL pages with fixed elements produces a shifted/clipped image otherwise.
+Always confirm suspected overflow by measuring `scrollWidth`, not by eyeballing
+screenshots.
+
+---
+
+## 2026-08-15 — Phase 1
+
+### D-013 · Session driver: database, not Redis
+Spec §3 lists Redis for sessions, but §9.6 requires an active-session list
+with per-session revoke — that needs enumerable sessions keyed by user, which
+the Redis driver does not provide. Sessions use the `database` driver (the
+skeleton's `sessions` table has `user_id`, `ip_address`, `user_agent`,
+`last_activity`); cache and queue remain on Redis.
+
+### D-014 · Fortify over Breeze; passkeys disabled
+Fortify 1.38 chosen (headless — all views are our own Arabic Blade; built-in
+TOTP 2FA with confirmation + recovery codes). The registration feature is
+disabled (owners create users), and Fortify 1.38's new passkey support is
+disabled (spec §9.5 mandates TOTP; passkeys can be revisited post-v1).
+Fortify encrypts `two_factor_secret` / `two_factor_recovery_codes` itself, so
+no Eloquent `encrypted` cast is added for them (double encryption would break
+Fortify's reads) — §10's requirement is satisfied by Fortify's own layer.
+
+### D-015 · activitylog v5 API + PII kept out of the audit trail
+spatie/laravel-activitylog 5.x moved `LogsActivity` to
+`Spatie\Activitylog\Models\Concerns` and `LogOptions` to `Support`, renamed
+`dontSubmitEmptyLogs()` → `dontLogEmptyChanges()`, and stores diffs in a
+dedicated `attribute_changes` column instead of `properties`.
+Partner `bank_name` / `bank_account` / `civil_number` are excluded from
+activity logging entirely: the logger reads casted (decrypted) values, so
+logging them would write plaintext PII into `activity_log`.
+
+### D-016 · Login rate limiting: two layers
+Configuring a named `login` limiter makes Fortify silently drop its internal
+5-attempt check from the login pipeline (AuthenticatedSessionController line
+~86). The pipeline is therefore declared explicitly via
+`Fortify::authenticateThrough()` to restore it. Result:
+- Inner (Fortify): 5 attempts per email+IP → friendly Arabic lockout message
+  on the form (spec §9.6's "5 per minute").
+- Outer (middleware `throttle:login`): escalating hard caps 10/min, 20/15min,
+  40/hour per email+IP → HTTP 429 (approximates the spec's "exponential
+  backoff"). Both layers are covered by tests.
+
+### D-017 · Livewire components are class-based (v3 style)
+Livewire 4 defaults to single-file components (PHP inside Blade). We use
+`app/Livewire/**` class components + `resources/views/livewire/**` views so
+every component action is covered by Larastan level 6 and Pint — the spec's
+authorization rules (§9.4) are enforceable by static analysis only if the PHP
+lives in `app/`.
+
+### D-018 · Role changes audited via spatie/laravel-permission events
+`permission.events_enabled = true`; `App\Listeners\LogRoleChange` writes
+role attach/detach into the activity log (log name `roles`) with the role
+names resolved. Auto event discovery registers the listener (union type-hint
+covers both events). Note: `DatabaseSeeder` must NOT use `WithoutModelEvents`
+or seeded role grants would go unlogged.
+
+### D-019 · CSP consequences honored in our own markup
+The CSP has no `unsafe-inline` for styles, which also blocks `style=""`
+attributes (style-src-attr falls back to style-src). The mobile bottom-nav
+column count is therefore expressed with `grid-cols-{n}` class variants
+instead of an inline style. `'unsafe-eval'` remains in script-src — Alpine's
+expression evaluator requires it; inline scripts/styles stay nonce-only.

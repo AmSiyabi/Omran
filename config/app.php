@@ -67,6 +67,12 @@ return [
 
     'timezone' => 'UTC',
 
+    // Storage is UTC; the UI renders Asia/Muscat (spec §6.3)
+    'display_timezone' => env('APP_DISPLAY_TIMEZONE', 'Asia/Muscat'),
+
+    // Local Vite dev-server port, allowed through the CSP in local env
+    'vite_dev_port' => env('VITE_PORT', 5174),
+
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration

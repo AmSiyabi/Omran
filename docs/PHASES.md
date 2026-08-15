@@ -52,3 +52,61 @@
   emulation instead. Not a layout bug — overflow measured at exactly 0.
 
 **Not built (per spec):** auth, models, business logic — Phase 1 next.
+
+---
+
+## Phase 1 — Identity and access ✅
+
+**Completed:** 2026-08-15
+
+### Built
+- **Identity schema** (spec §7.1): `users` (name_ar/name_en, phone, locale,
+  last-login tracking, is_active, soft deletes), `partners` (ownership %,
+  effective dates, encrypted bank/civil fields), `invoicing_entities`,
+  `user_devices` (new-device detection), Fortify 2FA columns, sessions table.
+- **Auth**: Fortify 1.38, Arabic views for login / 2FA challenge / password
+  reset / confirm / email verification. No public registration. Passkeys off.
+- **2FA**: TOTP with QR + manual key, confirm-before-active, recovery codes
+  shown exactly once, regenerate. Mandatory for owner/admin via `2fa`
+  middleware — an unconfirmed owner is boxed into the setup page (verified in
+  tests and a real browser run).
+- **Roles/permissions** (spec §9.1–9.2): 4 roles, 32 permissions, exact
+  matrices seeded idempotently. Role attach/detach audited (D-018).
+- **Session security** (spec §9.6): two-layer login rate limiting (D-016),
+  active-session list with revoke (database sessions, D-013), new-device
+  login email (Arabic), password policy min-12 + HaveIBeenPwned.
+- **Security headers** (spec §10): nonce-based CSP without unsafe-inline,
+  X-Frame-Options DENY, nosniff, strict Referrer-Policy, Permissions-Policy,
+  HSTS in production. Verified via curl and asserted in tests.
+- **Admin shell**: navy sidebar (desktop) / bottom nav (mobile, 44px+
+  targets, safe-area padding), both permission-filtered; dashboard
+  placeholder; security page; more page; permission-guarded placeholder
+  routes for courses (Phase 2) and finance (Phase 5).
+- **Audit log**: activitylog v5 on users/partners/invoicing entities with
+  old+new values; encrypted PII excluded from the trail (D-015).
+- **Seeders**: Hamad + Ammar as owners (passwords from env or generated and
+  printed once — never committed), partner records at 50/50, default
+  invoicing entity placeholder per §1.1.
+- `lang/ar/auth.php` complete; new admin strings in `common.php`.
+
+### Acceptance results
+| Criterion | Result |
+|---|---|
+| Unauthenticated request to any /admin/* route redirects to login | ✅ tested across all 6 admin routes |
+| A coordinator requesting a finance route gets 403 | ✅ tested (viewer too) |
+| An owner without confirmed 2FA cannot reach any route except 2FA setup | ✅ tested + verified in real browser (redirects to /admin/security/two-factor) |
+| Login rate limiting triggers after 5 failed attempts, tested | ✅ Arabic lockout at 6th attempt + HTTP 429 hard cap at 11th |
+| APP_DEBUG=false produces no stack trace on a forced 500 | ✅ tested |
+| All security headers present (curl -I) | ✅ verified live + asserted in tests |
+| Every role change appears in the activity log | ✅ attach + detach tested |
+| Pest test per role asserting reachable routes | ✅ exact status matrix per role |
+
+**Checks:** Pint clean · Larastan level 6, 0 errors · Pest **40/40** ·
+RTL grep clean · assets build clean.
+
+### Notes / deviations
+- Session driver switched to database — D-013.
+- Two-layer rate limiting design — D-016 (Fortify quirk documented).
+- User management UI (owners creating users) is not in the Phase 1 build
+  list; users are seeded/created via code for now. It will ride along with a
+  later phase's settings area.
