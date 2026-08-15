@@ -110,3 +110,55 @@ RTL grep clean · assets build clean.
 - User management UI (owners creating users) is not in the Phase 1 build
   list; users are seeded/created via code for now. It will ride along with a
   later phase's settings area.
+
+---
+
+## Phase 2 — Catalog ✅
+
+**Completed:** 2026-08-15
+
+### Built
+- **Schema** (spec §7.2): `categories`, `courses`, `cohorts`,
+  `cohort_sessions`, `cohort_deliverers` (with MySQL CHECK constraint +
+  observer for the one-identity invariant), `instructors`, `clients`, plus
+  the medialibrary `media` table. Bilingual `_ar`/`_en` columns from day one
+  (§6.4). All specced indexes.
+- **Domain**: `CohortStatus` enum owning the guarded transition matrix
+  (invalid transitions throw `InvalidCohortTransition`); `CourseLevel`,
+  `DeliveryMode`, `DelivererType`, `ClientType` enums with Arabic labels;
+  `ArabicSlug` (transliterate → unique ASCII, soft-deletes counted);
+  `Baisa` string⇄int money parsing (no floats, pre-Money primitive).
+- **Admin CRUD, Livewire class components, mobile-first**: courses (card
+  index w/ search + filters, full form with dynamic outcomes editor, cover
+  upload with AVIF/WebP responsive conversions, publish/unpublish), cohorts
+  (index, form with OMR price input and auto-generated codes, management
+  page: sessions CRUD, deliverers editor with sum=100 validation, status
+  transition buttons with confirmation modals), categories / instructors /
+  clients (list + modal forms). Catalog subnav chips tie the five areas
+  together; every list has an empty state; every ID property is `#[Locked]`;
+  every action re-authorizes.
+- **Policies** for all five entities; `Model::preventLazyLoading()` active.
+- **Seeders**: the six specced categories (idempotent); Arabic factories for
+  everything.
+- `lang/ar/courses.php` (~150 strings); full `validation.php` via
+  laravel-lang.
+
+### Acceptance results
+| Criterion | Result |
+|---|---|
+| Full CRUD works one-handed at 375px | ✅ screenshots at 375px, overflow measured 0px on all 7 key screens |
+| Status transitions enforce workflow; invalid throw, tested | ✅ full 7×7 matrix unit-tested + model tests + activity log |
+| Deliverer weights ≠ 100 rejected with Arabic message | ✅ tested (60+30 rejected, 33.33+66.67 accepted) |
+| Arabic slugs → clean unique ASCII | ✅ tested incl. soft-deleted collisions and suffixes |
+| 200-course list < 300ms | ✅ measured in test after cache warm |
+| Zero N+1 — preventLazyLoading on all list/detail views | ✅ active app-wide; lists/detail rendered under it in tests |
+| Every list has a working empty state | ✅ asserted for all four lists |
+
+**Checks:** Pint clean · Larastan level 6, 0 errors · Pest **97/97**
+(262 assertions) · RTL grep clean · build clean.
+
+### Notes / deviations
+- `distribution_policy_id` FK deferred to Phase 5 — D-020.
+- Support entities use courses.* permissions — D-021.
+- `$casts` property convention (Larastan gap) — D-022.
+- Media disk without symlinks; conversions non-queued — D-023.

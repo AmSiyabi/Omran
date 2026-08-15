@@ -47,6 +47,18 @@ return [
             'report' => false,
         ],
 
+        // Public media (course covers). Rooted directly under public/ so no
+        // storage:link symlink is needed — symlinks are unreliable on the
+        // Windows bind mount used in local dev.
+        'media' => [
+            'driver' => 'local',
+            'root' => public_path('media'),
+            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/media',
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

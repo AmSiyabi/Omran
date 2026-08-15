@@ -18,23 +18,18 @@ class Partner extends Model
 {
     use LogsActivity, SoftDeletes;
 
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'ownership_percent' => 'decimal:2',
-            'effective_from' => 'date',
-            'effective_to' => 'date',
-            'is_active' => 'boolean',
-            'public_profile_visible' => 'boolean',
-            // PII at rest is encrypted (spec §10)
-            'bank_name' => 'encrypted',
-            'bank_account' => 'encrypted',
-            'civil_number' => 'encrypted',
-        ];
-    }
+    /** @var array<string, string> */
+    protected $casts = [
+        'ownership_percent' => 'decimal:2',
+        'effective_from' => 'date',
+        'effective_to' => 'date',
+        'is_active' => 'boolean',
+        'public_profile_visible' => 'boolean',
+        // PII at rest is encrypted (spec §10)
+        'bank_name' => 'encrypted',
+        'bank_account' => 'encrypted',
+        'civil_number' => 'encrypted',
+    ];
 
     /**
      * @return BelongsTo<User, $this>

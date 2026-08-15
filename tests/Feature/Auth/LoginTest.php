@@ -34,7 +34,7 @@ it('throttles login after 5 failed attempts per email and IP', function () {
     $response->assertSessionHasErrors('email');
 
     $message = session('errors')->first('email');
-    expect($message)->toContain('حاول مرة أخرى');
+    expect($message)->toContain('مرة أخرى بعد');
 });
 
 it('hard-caps a brute-force burst with HTTP 429 from the outer limiter', function () {

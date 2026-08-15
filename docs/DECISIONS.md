@@ -165,3 +165,49 @@ attributes (style-src-attr falls back to style-src). The mobile bottom-nav
 column count is therefore expressed with `grid-cols-{n}` class variants
 instead of an inline style. `'unsafe-eval'` remains in script-src — Alpine's
 expression evaluator requires it; inline scripts/styles stay nonce-only.
+Category accent dots use SVG `fill` attributes (not CSP-restricted) instead
+of inline background-color styles.
+
+---
+
+## 2026-08-15 — Phase 2
+
+### D-020 · cohorts.distribution_policy_id has no FK until Phase 5
+Spec §7.2 declares the column as an FK to `distribution_policies`, but that
+table belongs to the Phase 5 financial core and Phase 2 explicitly must not
+build finance. The column exists now (nullable, indexed); Phase 5 creates the
+table, seeds the three contract policies, and adds the constraint.
+
+### D-021 · Categories/instructors/clients ride on courses.* permissions
+Spec §9.2 defines no permissions for these support entities. They follow
+`courses.view/create/update/delete`: every role that can see the catalog can
+see them; coordinators can create/update; only owner/admin can delete.
+Clients are cohort-related but managed by the same people who manage courses.
+
+### D-022 · Models use the legacy `$casts` property, not the `casts()` method
+Larastan 3.10 does not read Laravel 13's `casts(): array` method — every
+enum/datetime cast was silently typed as `string`, producing dozens of false
+level-6 errors. The `$casts` property is fully supported by both Laravel and
+Larastan, so it is the project convention. Revisit when Larastan supports the
+method form.
+
+### D-023 · Course covers via medialibrary on a symlink-free `media` disk
+Course cover uploads use spatie/laravel-medialibrary with non-queued
+conversions: AVIF + WebP at 480/960/1440 widths plus a WebP thumb (GD in the
+container supports both formats — verified). The `media` disk is rooted at
+`public/media` directly because `storage:link` symlinks are unreliable on the
+Windows bind mount. The spec's `courses.cover_image_path` column exists but
+is unused; the media table is the source of truth. Conversions are non-queued
+deliberately: the owner sees the result immediately and no worker process is
+required for correctness.
+
+### D-024 · Deliverer weight validation uses integer hundredths
+"Weights must sum to 100.00" is checked by summing `round(weight × 100)` as
+integers — no float accumulation. Weights like 33.33 + 66.67 pass; 60 + 30
+fails with the Arabic message (Phase 2 acceptance). Rows are replaced
+atomically in a transaction.
+
+### D-025 · Faker realText() banned from factories
+`fake()->realText()` with the Arabic locale builds a huge Markov table and
+exhausted the test-suite memory limit. Factories use fixed Arabic copy;
+`phpunit.xml` also raises `memory_limit` to 512M for the growing suite.

@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Database\Factories\InvoicingEntityFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -14,19 +16,15 @@ use Spatie\Activitylog\Support\LogOptions;
 ])]
 class InvoicingEntity extends Model
 {
-    use LogsActivity, SoftDeletes;
+    /** @use HasFactory<InvoicingEntityFactory> */
+    use HasFactory, LogsActivity, SoftDeletes;
 
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'vat_registered' => 'boolean',
-            'vat_registered_from' => 'date',
-            'is_default' => 'boolean',
-        ];
-    }
+    /** @var array<string, string> */
+    protected $casts = [
+        'vat_registered' => 'boolean',
+        'vat_registered_from' => 'date',
+        'is_default' => 'boolean',
+    ];
 
     public function getActivitylogOptions(): LogOptions
     {

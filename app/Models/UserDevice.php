@@ -9,15 +9,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['user_id', 'device_hash', 'ip_address', 'user_agent', 'last_seen_at'])]
 class UserDevice extends Model
 {
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'last_seen_at' => 'datetime',
-        ];
-    }
+    /** @var array<string, string> */
+    protected $casts = [
+        'last_seen_at' => 'datetime',
+    ];
 
     /**
      * @return BelongsTo<User, $this>
