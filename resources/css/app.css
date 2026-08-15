@@ -1,0 +1,149 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+/* ------------------------------------------------------------------
+   الخطوط — مستضافة ذاتياً، مقتطعة (عربي + لاتيني)، woff2 فقط
+   El Messiri (متغيّر 400–700) للعناوين · Tajawal للنصوص
+   ------------------------------------------------------------------ */
+@font-face {
+    font-family: 'El Messiri';
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url('/fonts/el-messiri-var-arabic.woff2') format('woff2');
+    unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+200C-200E, U+2010-2011, U+FB50-FDFF, U+FE70-FEFC;
+}
+
+@font-face {
+    font-family: 'El Messiri';
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url('/fonts/el-messiri-var-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+20AC, U+2122, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/fonts/tajawal-400-arabic.woff2') format('woff2');
+    unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+200C-200E, U+2010-2011, U+FB50-FDFF, U+FE70-FEFC;
+}
+
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/fonts/tajawal-400-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+20AC, U+2122, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/fonts/tajawal-500-arabic.woff2') format('woff2');
+    unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+200C-200E, U+2010-2011, U+FB50-FDFF, U+FE70-FEFC;
+}
+
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/fonts/tajawal-500-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+20AC, U+2122, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/fonts/tajawal-700-arabic.woff2') format('woff2');
+    unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+08A0-08FF, U+200C-200E, U+2010-2011, U+FB50-FDFF, U+FE70-FEFC;
+}
+
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/fonts/tajawal-700-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+20AC, U+2122, U+FEFF, U+FFFD;
+}
+
+/* ------------------------------------------------------------------
+   ألوان عمران — من /brand/palette.png (الهوية الرسمية)
+   ------------------------------------------------------------------ */
+@theme {
+    --color-navy: #16202f;
+    --color-navy-ink: #1a2536;
+    --color-navy-deep: #0e1622;
+
+    --color-gold: #cda34f;
+    --color-gold-light: #e4c67e;
+    --color-gold-deep: #b8893a;
+
+    --color-cream: #f4efe3;
+    --color-cream-warm: #f1e7d2;
+
+    --color-muted: #6a7383;
+    --color-line: #e4dcc9;
+
+    /* حالات الواجهة — منسجمة مع اللوحة */
+    --color-success: #2e7d5b;
+    --color-success-soft: #e7f1ec;
+    --color-error: #a8433e;
+    --color-error-soft: #f6e9e8;
+    --color-warning: #a06d1e;
+    --color-warning-soft: #f5ecda;
+    --color-info: #3e5c76;
+    --color-info-soft: #e8eef4;
+
+    --font-sans: 'Tajawal', 'Segoe UI', Tahoma, ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'El Messiri', 'Tajawal', ui-serif, serif;
+}
+
+/* ------------------------------------------------------------------
+   الأساس
+   ------------------------------------------------------------------ */
+@layer base {
+    [x-cloak] {
+        display: none !important;
+    }
+
+    body {
+        font-family: var(--font-sans);
+        /* Arabic script needs a taller line to breathe */
+        line-height: 1.7;
+        background-color: var(--color-cream);
+        color: var(--color-navy);
+        -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: var(--font-display);
+        font-weight: 700;
+        line-height: 1.35;
+        text-wrap: balance;
+    }
+
+    /* Motion is opt-in; reduced motion wins absolutely (spec §5.2) */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+}

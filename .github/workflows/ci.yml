@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.5
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, intl, pdo_sqlite, bcmath, gd, zip, redis
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Pint (code style)
+        run: ./vendor/bin/pint --test
+
+      - name: Larastan (level 6)
+        run: ./vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+
+      - name: RTL check — no physical-direction Tailwind utilities
+        run: bash scripts/check-rtl.sh
+
+      - name: Prepare test environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Pest
+        run: php artisan test
+
+  assets:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Build assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Font payload budget (< 120KB)
+        run: |
+          total=$(du -cb public/fonts/*.woff2 | tail -1 | cut -f1)
+          echo "Font payload: ${total} bytes"
+          if [ "$total" -ge 122880 ]; then
+            echo "❌ Font payload ${total} bytes exceeds 120KB budget"
+            exit 1
+          fi
