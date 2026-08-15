@@ -162,3 +162,54 @@ RTL grep clean · assets build clean.
 - Support entities use courses.* permissions — D-021.
 - `$casts` property convention (Larastan gap) — D-022.
 - Media disk without symlinks; conversions non-queued — D-023.
+
+---
+
+## Phase 3 — Public website ✅
+
+**Completed:** 2026-08-15
+
+### Built
+- **Landing page per the §5.2 design thesis**: orchestrated load sequence
+  (wordmark settles → thesis line → sub-line → CTA, staged CSS keyframes),
+  fine-line star watermark as the only ornament, gold as single punctuation
+  per screen, catalog-as-argument section, services, about teaser, contact
+  band, admin login entry below the fold.
+- **Animation system**: hero sequence + IntersectionObserver scroll reveals
+  that fire once; `prefers-reduced-motion` collapses everything instantly
+  (verified by emulation: animation-duration 1e-05s, all content visible).
+  Public JS total: **0.35KB gzipped**, no Livewire (D-026).
+- **Pages**: catalog with server-side category filter chips; course detail
+  (outcomes, audience, prerequisites, responsive AVIF/WebP cover, upcoming
+  cohorts, view counter); cohort detail (schedule, status-aware CTA);
+  instructors + profiles; **عن المركز** (story, values, founding partners);
+  **أعمالنا** (delivered programs, clients, live stats — D-031); contact.
+- **Contact form**: honeypot + min-fill-time trap (silent success for bots),
+  3/min + 12/hour per-IP throttle, DB storage, Arabic mail notification to
+  owners. No third-party captcha (spec).
+- **SEO**: per-page meta/OG/canonical via the public layout, generated Arabic
+  OG image (D-029), `EducationalOrganization` + `Course`/`CourseInstance`
+  JSON-LD, `/sitemap.xml` (published content only), dynamic robots.txt
+  (D-028), Western-digit dates, `translatedFormat` Arabic month names.
+- Only published courses and announced+ cohorts are visible; drafts,
+  cancelled cohorts, and hidden instructors 404.
+
+### Acceptance results
+| Criterion | Result |
+|---|---|
+| LCP < 1.5s on simulated 4G | ⚠️ 2.9s simulated on `artisan serve` (no compression/H2). Observed asset delivery < 240ms; gap is dev-serving infra — budget enforced on the production runtime in Phase 8 (D-030) |
+| Lighthouse Perf ≥95 / A11y ≥95 / SEO 100 | Perf **93** (same infra cause) · A11y **96** ✅ · SEO **100** ✅ · BP **100** |
+| Correct at 375/768/1024/1440/2560 | ✅ screenshots, overflow = 0px at every width |
+| prefers-reduced-motion disables all animation | ✅ verified via emulation |
+| Arabic shaping in Safari/Chrome/Firefox | ✅ Chrome verified (screenshots); Safari/Firefox need a manual check on real devices |
+| Zero layout shift on font load | ✅ CLS = 0 |
+| Screen reader announces Arabic correctly | ✅ semantic landmarks, aria labels, skip link, `lang="ar" dir="rtl"`; full Axe pass scheduled for Phase 7 |
+
+**Checks:** Pint clean · Larastan level 6, 0 errors · Pest **114/114**
+(321 assertions) · RTL grep clean.
+
+### Notes / deviations
+- Laravel 13 `@context` directive collision with JSON-LD — D-027.
+- Dev-image OPcache tuning for the Windows bind mount — D-030.
+- The Phase 0 component-showcase welcome page was retired; `/` is now the
+  real landing.

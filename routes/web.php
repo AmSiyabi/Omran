@@ -1,5 +1,12 @@
 <?php
 
+use App\Http\Controllers\Site\CohortController;
+use App\Http\Controllers\Site\ContactController;
+use App\Http\Controllers\Site\CourseController;
+use App\Http\Controllers\Site\HomeController;
+use App\Http\Controllers\Site\InstructorController;
+use App\Http\Controllers\Site\PageController;
+use App\Http\Controllers\Site\SitemapController;
 use App\Livewire\Admin\Catalog\CategoriesIndex;
 use App\Livewire\Admin\Catalog\ClientsIndex;
 use App\Livewire\Admin\Catalog\CohortForm;
@@ -13,9 +20,47 @@ use App\Livewire\Admin\Security;
 use App\Livewire\Admin\TwoFactorSetup;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
+/*
+|--------------------------------------------------------------------------
+| الموقع العام — Phase 3. Never shares middleware with admin (spec §9.3).
+|--------------------------------------------------------------------------
+*/
+Route::name('public.')->group(function (): void {
+    Route::get('/', HomeController::class)->name('home');
+
+    Route::get('/courses', [CourseController::class, 'index'])->name('courses');
+    Route::get('/courses/{slug}', [CourseController::class, 'show'])->name('courses.show');
+    Route::get('/cohorts/{code}', CohortController::class)->name('cohorts.show');
+
+    Route::get('/instructors', [InstructorController::class, 'index'])->name('instructors');
+    Route::get('/instructors/{id}', [InstructorController::class, 'show'])
+        ->whereNumber('id')
+        ->name('instructors.show');
+
+    Route::get('/about', [PageController::class, 'about'])->name('about');
+    Route::get('/work', [PageController::class, 'work'])->name('work');
+
+    Route::get('/contact', [ContactController::class, 'show'])->name('contact');
+    Route::post('/contact', [ContactController::class, 'store'])
+        ->middleware('throttle:contact')
+        ->name('contact.store');
 });
+
+Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+
+// ديناميكي حتى يكون رابط Sitemap مطلقاً كما يتطلب المعيار
+Route::get('/robots.txt', function () {
+    $lines = implode("\n", [
+        'User-agent: *',
+        'Allow: /',
+        'Disallow: /admin',
+        'Disallow: /login',
+        '',
+        'Sitemap: '.route('sitemap'),
+    ]);
+
+    return response($lines, 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
+})->name('robots');
 
 /*
 |--------------------------------------------------------------------------

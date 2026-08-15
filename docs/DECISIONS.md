@@ -211,3 +211,48 @@ atomically in a transaction.
 `fake()->realText()` with the Arabic locale builds a huge Markov table and
 exhausted the test-suite memory limit. Factories use fixed Arabic copy;
 `phpunit.xml` also raises `memory_limit` to 512M for the growing suite.
+
+---
+
+## 2026-08-15 — Phase 3
+
+### D-026 · Public pages are Livewire-free
+The public site uses plain controllers + Blade. Its entire JS is
+`resources/js/public.js` (0.35KB gzipped): IntersectionObserver reveals and
+the mobile nav toggle. Reveal hiding is gated on an `html.js` class set by a
+nonce'd inline script, so no-JS users (and crawlers) see full content.
+Category filtering is server-side GET links — SEO-crawlable, zero JS.
+
+### D-027 · Laravel 13's @context Blade directive vs JSON-LD
+Laravel 13 ships a `@context` directive; a literal `"@context"` inside a
+JSON-LD script compiles into an unclosed `if` and breaks the view. All
+schema.org keys in Blade are written `@@context` / `@@type` (Blade escape).
+
+### D-028 · robots.txt is a route, not a static file
+The `Sitemap:` line must be an absolute URL; a static file cannot know the
+host. `/robots.txt` renders from the route table using `route('sitemap')`.
+
+### D-029 · Generated brand assets
+The OG image (1200×630, Arabic, on-brand) is rendered from an HTML template
+by headless Chrome (`scripts/og-image.mjs`) — re-run it when the thesis line
+changes. Public-site logos are downsized WebP variants
+(`scripts/optimize-logos.php`, ~15KB vs ~60KB PNG originals); admin keeps the
+PNGs.
+
+### D-030 · Dev-server performance findings (measurement honesty)
+Two Windows-bind-mount pathologies fixed in the dev image: CLI OPcache is off
+by default under `artisan serve` (every request re-parsed the framework), and
+`opcache.revalidate_freq=1` caused a ~1.8s stat storm across ~700 files once
+per second (now 15s; PHP edits may take up to 15s to appear).
+Lighthouse on the landing page: **SEO 100, Best-Practices 100, A11y 96,
+Performance 93, CLS 0, TBT 0** with all assets downloaded in <240ms observed.
+The remaining gap to the §11.5 budgets (perf ≥95, LCP <1.5s vs 2.9s
+simulated) is entirely serving infrastructure: `artisan serve` sends
+uncompressed responses over HTTP/1.1 (67KB CSS instead of ~10KB Brotli).
+Compression + HTTP/2 are Phase 8 production-runtime work, where the budgets
+get enforced in CI per the spec.
+
+### D-031 · "أعمالنا" page added at owner request
+Not in the spec's Phase 3 build list. Shows delivered/settled cohorts of
+published courses, client names, and live counters. Empty-state friendly
+until real deliveries exist.

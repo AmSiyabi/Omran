@@ -147,3 +147,54 @@
         }
     }
 }
+
+/* ------------------------------------------------------------------
+   حركة الموقع العام — تسلسل تحميل واحد + كشف عند التمرير (مرة واحدة)
+   spec §5.2: motion serves reading; reduced-motion wins absolutely
+   ------------------------------------------------------------------ */
+@layer components {
+    /* تسلسل البطل: الشعار يستقر، ثم سطر الأطروحة، ثم الأزرار */
+    @keyframes settle {
+        from {
+            opacity: 0;
+            translate: 0 18px;
+        }
+
+        to {
+            opacity: 1;
+            translate: 0 0;
+        }
+    }
+
+    .hero-seq {
+        opacity: 0;
+        animation: settle 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .hero-seq-1 { animation-delay: 0.05s; }
+    .hero-seq-2 { animation-delay: 0.3s; }
+    .hero-seq-3 { animation-delay: 0.55s; }
+    .hero-seq-4 { animation-delay: 0.75s; }
+
+    /* الكشف عند التمرير — يُفعَّل فقط عند وجود JS (html.js)، مرة واحدة */
+    .js [data-reveal] {
+        opacity: 0;
+        translate: 0 20px;
+        transition: opacity 0.6s ease-out, translate 0.6s ease-out;
+    }
+
+    .js [data-reveal].is-revealed {
+        opacity: 1;
+        translate: 0 0;
+    }
+
+    /* بطاقة عامة: رفع 3px مع ظل — لا شيء آخر (spec §5.2) */
+    .card-lift {
+        transition: translate 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card-lift:hover {
+        translate: 0 -3px;
+        box-shadow: 0 10px 25px -12px rgb(22 32 47 / 0.25);
+    }
+}
