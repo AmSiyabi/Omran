@@ -259,3 +259,57 @@ RTL grep clean · assets build clean.
 ### Notes / deviations
 - Pending ≠ seat held; no waitlist auto-promotion — D-033/D-034.
 - Payment recording deferred to the Phase 5 ledger — D-036.
+
+---
+
+## Phase 5 — Financial core and distribution engine ✅
+
+**Completed:** 2026-08-17
+
+### Built
+- **`Money` value object** (§8.1): immutable int baisa; add/subtract/
+  multiplyByPercent/format/isNegative/isZero + `allocate()` largest-remainder
+  (§8.7) with fractional weights, negative totals, and full unit coverage.
+  `MoneyCast` on financial models (D-042).
+- **Chart of accounts** (§8.2): all 26 accounts seeded exactly, partner-linked
+  301x/302x equity accounts generated per partner.
+- **Journal** (§8.3): append-only `journal_entries`/`journal_lines` (no
+  updated_at, no soft deletes), observers blocking every mutation except the
+  reversal flip (D-038), all four invariants asserted pre-write, gapless
+  `JE-YYYY-NNNNNN` numbering via sequence-row lock (D-037).
+- **The six recording actions** (§8.4 A–D, F, G) through `LedgerRecorder` —
+  debit/credit never reaches the UI. Receipt photos attach to any entry via
+  the private-disk `documents` table served by signed URLs only (§7.4).
+- **`DistributionEngine`** (§8.5): pure compute → `DistributionResult`;
+  gross from 4xxx, direct costs 5020–5090 (5010 excluded), the three contract
+  policies seeded verbatim, LOSS and OVERCOMMITTED flags.
+- **Settlements**: draft (recalculable) → one-screen review → confirm
+  (snapshot frozen, §8.5 journal posted, cohort → settled) → reverse
+  (reversing entry + cohort reopened, D-039). Loss requires explicit
+  acceptance; overcommitted fee requires a written owner override.
+- **Quick-add expense** (§12.3): FAB → amount → category chip → save; smart
+  default to the last-used category; direct-cost categories demand a cohort;
+  receipt camera capture.
+- Finance hub with recent entries (expandable to lines), entry reversal with
+  reason, `lang/ar/finance.php` (~90 strings).
+
+### Acceptance results
+| Criterion | Result |
+|---|---|
+| All eight golden tests, exact baisa values | ✅ engine cases 1–7 + settlement journal balance (golden 8) — passed on first engine run |
+| Property test: 10,000 random combos sum exactly | ✅ + 2,000 more in Money unit tests |
+| Every posted journal entry balances | ✅ swept in tests |
+| Updating/deleting a posted entry throws | ✅ entries and lines both |
+| Gapless numbers under 100 concurrent creations | ✅ 100 forked processes, 0 failures, 0 gaps (D-037 — first attempt deadlocked and was redesigned) |
+| Coordinator calling confirmSettlement() directly → 403 | ✅ (admin too — finance.settle is owner-only) |
+| #[Locked] tamper rejected | ✅ settlementId tamper test |
+| Quick-add in four taps | ✅ FAB → amount → chip → save (screenshot) |
+| Snapshot renders after policy edit | ✅ policy changed 70→60 post-confirm; snapshot untouched, shows 70.00 |
+
+**Checks:** Pint clean · Larastan level 6, 0 errors · Pest **181/181**
+(12,553 assertions) · RTL grep clean.
+
+### Notes / deviations
+- Monthly settlement computation deferred to Phase 6 — D-040.
+- Loss journal treatment defined (spec silent) — D-041.
+- DB-level REVOKE on journal tables → Phase 8 provisioning — D-038.

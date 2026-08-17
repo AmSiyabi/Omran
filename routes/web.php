@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\DocumentController;
 use App\Http\Controllers\Site\CohortController;
 use App\Http\Controllers\Site\ContactController;
 use App\Http\Controllers\Site\CourseController;
@@ -19,6 +20,9 @@ use App\Livewire\Admin\Catalog\InstructorsIndex;
 use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\Enrollments\AttendanceSheet;
 use App\Livewire\Admin\Enrollments\EnrollmentsIndex;
+use App\Livewire\Admin\Finance\FinanceHub;
+use App\Livewire\Admin\Finance\SettlementShow;
+use App\Livewire\Admin\Finance\SettlementsIndex;
 use App\Livewire\Admin\Security;
 use App\Livewire\Admin\TwoFactorSetup;
 use Illuminate\Support\Facades\Route;
@@ -118,9 +122,21 @@ Route::middleware(['auth', 'verified', 'role:owner|admin|coordinator|viewer', '2
                 ->name('cohorts.attendance');
         });
 
-        // Placeholder until Phase 5 — permission-guarded so the role matrix
-        // is enforceable (and testable) from day one.
-        Route::view('/finance', 'admin.placeholders.finance')
-            ->middleware('permission:finance.view')
-            ->name('finance');
+        // المستندات — روابط موقعة مؤقتة فقط (spec §7.4)
+        Route::get('/documents/{document}', [DocumentController::class, 'show'])
+            ->whereNumber('document')
+            ->middleware('signed')
+            ->name('documents.show');
+
+        // المالية — Phase 5
+        Route::middleware('permission:finance.view')->group(function (): void {
+            Route::get('/finance', FinanceHub::class)->name('finance');
+        });
+
+        Route::middleware('permission:finance.settle')->group(function (): void {
+            Route::get('/finance/settlements', SettlementsIndex::class)->name('finance.settlements');
+            Route::get('/finance/settlements/{settlement}', SettlementShow::class)
+                ->whereNumber('settlement')
+                ->name('finance.settlements.show');
+        });
     });

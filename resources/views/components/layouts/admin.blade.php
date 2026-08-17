@@ -92,6 +92,11 @@
             {{ $slot }}
         </main>
 
+        {{-- الإضافة السريعة للمصروفات — الزر العائم (spec §12.3) --}}
+        @if (auth()->user()?->can('finance.record_expense'))
+            <livewire:admin.finance.quick-add-expense />
+        @endif
+
         {{-- شريط التنقل السفلي — الجوال --}}
         {{-- inline style= is blocked by our CSP — column count via class variants --}}
         <nav

@@ -292,3 +292,47 @@ Enrollments carry `amount_due/paid_baisa` + `payment_status` (displayed as
 badges and exported), but no editing UI yet: recording a payment must write
 journal entries, which is exactly Phase 5's `record payment` action. Wiring a
 field-edit now would create money data outside the ledger.
+
+---
+
+## 2026-08-17 — Phase 5
+
+### D-037 · Gapless numbering: exclusive-lock-first, no upgrade
+The naive insertOrIgnore + SELECT…FOR UPDATE inside one transaction
+deadlocked under real concurrency (shared→exclusive lock upgrade). The
+sequence row is ensured outside the transaction (autocommit), then the
+increment is a single atomic UPDATE that takes the X lock in one step;
+rollbacks roll the increment back, keeping numbers gapless. Verified with
+100 forked processes: 0 failures, 100 distinct sequential numbers.
+
+### D-038 · The reversal flip is the single permitted journal mutation
+"Append-only" needs one carve-out the spec itself defines: flipping a posted
+entry to reversed while linking the reversing entry. The observer allows
+exactly that dirty-set (status + reversed_by_entry_id, posted→reversed) and
+throws on everything else. DB-level REVOKE UPDATE/DELETE (spec §8.3 note) is
+deferred to Phase 8 deployment where DB users are provisioned.
+
+### D-039 · Reversing a settlement reopens the cohort
+`settled → delivered` is outside the §Phase-2 transition matrix, but a
+reversed settlement must be re-settleable. The settlement service performs
+this one transition directly (documented exception, audit-logged); the
+enum matrix stays strict for everything else.
+
+### D-040 · Monthly settlements deferred to Phase 6
+Schema (`type=monthly`, period columns) and the `opex_charged_to_center_pool`
+setting shipped now per spec; the monthly computation (aggregate delivered
+cohorts + period opex per §8.6) lands in Phase 6 beside the reports that
+share its arithmetic. Per-cohort settlement — the contract's primary cadence —
+is complete end to end.
+
+### D-041 · Loss vs overcommit journal treatment
+The spec's settlement journal only covers profits. For accepted losses the
+entries invert: Dr partner current accounts / Cr retained earnings — each
+partner's جاري absorbs half the loss, which the contract's 50/50 principle
+implies. Confirmed with the owners' golden test 5 expectations.
+
+### D-042 · MoneyCast only on the financial core
+JournalLine and Settlement amounts cast to the Money VO. Catalog columns
+from earlier phases (cohort price, enrollment amounts) keep int casts + the
+Baisa helper — retrofitting them mid-project would churn working code for no
+correctness gain. New financial tables must use MoneyCast.

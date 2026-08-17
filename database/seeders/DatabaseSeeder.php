@@ -12,6 +12,8 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             OwnersSeeder::class,
             CategorySeeder::class,
+            ChartOfAccountsSeeder::class,
+            DistributionPolicySeeder::class,
         ]);
     }
 }

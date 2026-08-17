@@ -82,6 +82,14 @@ class Cohort extends Model
     }
 
     /**
+     * @return HasMany<Settlement, $this>
+     */
+    public function settlements(): HasMany
+    {
+        return $this->hasMany(Settlement::class);
+    }
+
+    /**
      * The only way status ever changes. Invalid transitions throw (Phase 2
      * acceptance) and every change lands in the activity log.
      */
