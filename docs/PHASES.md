@@ -213,3 +213,49 @@ RTL grep clean · assets build clean.
 - Dev-image OPcache tuning for the Windows bind mount — D-030.
 - The Phase 0 component-showcase welcome page was retired; `/` is now the
   real landing.
+
+---
+
+## Phase 4 — Registration and enrollment ✅
+
+**Completed:** 2026-08-15
+
+### Built
+- **Schema §7.3**: `registration_links` (32-char base62 tokens, label, price
+  override, max uses, expiry, approval flag — activity-logged per §7.5),
+  `enrollments` (unique cohort+email, status/payment enums, baisa amounts),
+  `attendance_records` (unique per enrollment+session).
+- **`RegisterParticipant` service** — the only public write path: one
+  transaction, `FOR UPDATE` locks on the link and cohort rows; validates
+  active/expiry/uses/cohort-open/registration-window; confirmed or waitlisted
+  by live capacity; pending when approval required (no seat held, D-033);
+  approve/cancel with the same lock discipline and seat bookkeeping.
+- **Public `/join/{token}`** — cohort summary + 5-field Arabic form,
+  noindexed; friendly Arabic pages for revoked/expired/exhausted/closed
+  links (never an error page); status-aware success states; per-IP throttle
+  (5/min, 30/hr); status-appropriate Arabic email (confirmed/waitlist/pending).
+- **Admin — link generator** on the cohort page: create (label, price
+  override, max uses, expiry, approval), copy-to-clipboard, revoke with
+  confirmation. `links.*` permissions — owner/admin only, verified by test.
+- **Admin — enrollments** per cohort: search + status filter, mobile cards,
+  approve / bulk-approve (seat-safe), cancel (frees seat), XLSX export
+  (spatie/simple-excel) with Arabic headers.
+- **Admin — attendance sheet**: session chips, one tap cycles
+  حاضر→غائب→متأخر→معذور with instant save, «الكل حاضر» shortcut.
+
+### Acceptance results
+| Criterion | Result |
+|---|---|
+| Expired/revoked/exhausted link shows clear Arabic message, never a stack trace | ✅ all five unusable states tested |
+| Concurrency: 50 simultaneous vs 10 seats → exactly 10/40 | ✅ **real** 50-process fork probe on MySQL: 10 confirmed, 40 waitlisted, 0 lost (D-035) + sequential logic test |
+| Registration < 60s on a phone | ✅ 5 fields, one screen (screenshot; 0px overflow) |
+| Attendance for 30 in < 90s | ✅ one tap per participant + mark-all shortcut |
+| Registration endpoint rate-limited per IP | ✅ 429 tested |
+| Tokens not enumerable | ✅ 404s on unknown + near-miss mutations; 32-char base62 (~190 bits) |
+
+**Checks:** Pint clean · Larastan level 6, 0 errors · Pest **137/137**
+(407 assertions) · RTL grep clean · build clean.
+
+### Notes / deviations
+- Pending ≠ seat held; no waitlist auto-promotion — D-033/D-034.
+- Payment recording deferred to the Phase 5 ledger — D-036.

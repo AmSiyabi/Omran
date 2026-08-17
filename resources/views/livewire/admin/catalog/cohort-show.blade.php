@@ -131,6 +131,25 @@
         @endif
     </x-card>
 
+    {{-- روابط التسجيل — Phase 4 --}}
+    <div class="mt-5">
+        <livewire:admin.enrollments.registration-links :cohort-id="$cohort->id" />
+    </div>
+
+    {{-- التسجيلات والحضور --}}
+    @can('viewAny', App\Models\Enrollment::class)
+        <div class="mt-5 flex flex-wrap gap-2">
+            <x-button variant="secondary" :href="route('admin.cohorts.enrollments', $cohort)" wire:navigate>
+                {{ __('courses.enrollments') }} ({{ $cohort->seats_taken }}{{ $cohort->capacity ? '/'.$cohort->capacity : '' }})
+            </x-button>
+            @can('manage', App\Models\Enrollment::class)
+                <x-button variant="secondary" :href="route('admin.cohorts.attendance', $cohort)" wire:navigate>
+                    {{ __('courses.attendance_sheet') }}
+                </x-button>
+            @endcan
+        </div>
+    @endcan
+
     @if ($cohort->internal_notes)
         <x-card class="mt-5">
             <h2 class="font-bold text-navy">{{ __('courses.internal_notes') }}</h2>

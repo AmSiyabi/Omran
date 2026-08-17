@@ -5,6 +5,7 @@ use App\Http\Controllers\Site\ContactController;
 use App\Http\Controllers\Site\CourseController;
 use App\Http\Controllers\Site\HomeController;
 use App\Http\Controllers\Site\InstructorController;
+use App\Http\Controllers\Site\JoinController;
 use App\Http\Controllers\Site\PageController;
 use App\Http\Controllers\Site\SitemapController;
 use App\Livewire\Admin\Catalog\CategoriesIndex;
@@ -16,6 +17,8 @@ use App\Livewire\Admin\Catalog\CourseForm;
 use App\Livewire\Admin\Catalog\CoursesIndex;
 use App\Livewire\Admin\Catalog\InstructorsIndex;
 use App\Livewire\Admin\Dashboard;
+use App\Livewire\Admin\Enrollments\AttendanceSheet;
+use App\Livewire\Admin\Enrollments\EnrollmentsIndex;
 use App\Livewire\Admin\Security;
 use App\Livewire\Admin\TwoFactorSetup;
 use Illuminate\Support\Facades\Route;
@@ -44,6 +47,12 @@ Route::name('public.')->group(function (): void {
     Route::post('/contact', [ContactController::class, 'store'])
         ->middleware('throttle:contact')
         ->name('contact.store');
+
+    // التسجيل عبر الروابط المولدة — Phase 4 (spec §7.5: ASCII path)
+    Route::get('/join/{token}', [JoinController::class, 'show'])->name('join');
+    Route::post('/join/{token}', [JoinController::class, 'store'])
+        ->middleware('throttle:join')
+        ->name('join.store');
 });
 
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
@@ -94,6 +103,19 @@ Route::middleware(['auth', 'verified', 'role:owner|admin|coordinator|viewer', '2
             Route::get('/cohorts/create', CohortForm::class)->name('cohorts.create');
             Route::get('/cohorts/{cohort}', CohortShow::class)->whereNumber('cohort')->name('cohorts.show');
             Route::get('/cohorts/{cohort}/edit', CohortForm::class)->whereNumber('cohort')->name('cohorts.edit');
+        });
+
+        // التسجيلات والحضور — Phase 4
+        Route::middleware('permission:enrollments.view')->group(function (): void {
+            Route::get('/cohorts/{cohort}/enrollments', EnrollmentsIndex::class)
+                ->whereNumber('cohort')
+                ->name('cohorts.enrollments');
+        });
+
+        Route::middleware('permission:enrollments.manage')->group(function (): void {
+            Route::get('/cohorts/{cohort}/attendance', AttendanceSheet::class)
+                ->whereNumber('cohort')
+                ->name('cohorts.attendance');
         });
 
         // Placeholder until Phase 5 — permission-guarded so the role matrix

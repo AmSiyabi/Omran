@@ -33,5 +33,13 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perHour(12)->by($request->ip()),
             ];
         });
+
+        // نقطة التسجيل العامة — spec Phase 4: rate-limited per IP
+        RateLimiter::for('join', function (Request $request) {
+            return [
+                Limit::perMinute(5)->by($request->ip()),
+                Limit::perHour(30)->by($request->ip()),
+            ];
+        });
     }
 }

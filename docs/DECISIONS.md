@@ -256,3 +256,39 @@ get enforced in CI per the spec.
 Not in the spec's Phase 3 build list. Shows delivered/settled cohorts of
 published courses, client names, and live counters. Empty-state friendly
 until real deliveries exist.
+
+---
+
+## 2026-08-15 — Phase 4
+
+### D-032 · Token length: 32 chars (spec §7.3 wins over §10)
+§7.3 specifies a 32-char token, §10 says base62-encode 32 random bytes
+(~43 chars). Implemented 32 base62 chars from `random_bytes` (~190 bits) —
+comfortably non-enumerable, matches the schema definition.
+
+### D-033 · Approval-required registrations do not hold a seat
+The spec is silent on whether a pending (approval-required) registration
+reserves capacity. Decision: it does not — the seat decision happens at
+approval time, under the same row locks, granting Confirmed or Waitlisted by
+live capacity. Prevents unreviewed spam requests from blocking real seats.
+Statuses holding seats: confirmed / attended / no_show. The `approved` enum
+value exists per schema but is unused by the current flow.
+
+### D-034 · No auto-promotion from the waitlist
+When a confirmed enrollment is cancelled the seat frees up, but nobody is
+promoted automatically — the owner/coordinator approves a waitlisted person
+explicitly (bulk approve makes this quick). Automatic promotion would email
+people without human review; revisit post-v1 if cadence demands it.
+
+### D-035 · Concurrency proven with forked processes, not simulated
+`php artisan app:concurrency-probe` forks 50 real OS processes (pcntl inside
+the container), each with its own MySQL connection racing on the same
+`SELECT … FOR UPDATE` seat counter. Result on 2026-08-15: 10 confirmed /
+40 waitlisted / seats_taken 10 / 0 lost — no oversell. The Pest suite covers
+the same logic sequentially (SQLite can't share :memory: across forks).
+
+### D-036 · Payment recording UI deferred to Phase 5
+Enrollments carry `amount_due/paid_baisa` + `payment_status` (displayed as
+badges and exported), but no editing UI yet: recording a payment must write
+journal entries, which is exactly Phase 5's `record payment` action. Wiring a
+field-edit now would create money data outside the ledger.
