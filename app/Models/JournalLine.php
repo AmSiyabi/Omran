@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 #[Fillable([
     'journal_entry_id', 'account_id', 'debit_baisa', 'credit_baisa',
-    'partner_id', 'cohort_id', 'memo_ar', 'line_order',
+    'partner_id', 'cohort_id', 'memo_ar', 'line_order', 'vat_treatment',
 ])]
 #[ObservedBy(JournalLineObserver::class)]
 class JournalLine extends Model

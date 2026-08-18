@@ -3,6 +3,9 @@
 namespace App\Finance;
 
 use App\Enums\JournalEntryStatus;
+use App\Jobs\RecomputeVatRollingTotal;
+use App\Jobs\RefreshCohortFinancialSummary;
+use App\Models\Account;
 use App\Models\JournalEntry;
 use App\Models\JournalLine;
 use Carbon\CarbonInterface;
@@ -22,7 +25,7 @@ use Illuminate\Support\Facades\DB;
 class JournalPoster
 {
     /**
-     * @param  list<array{account_id: int, debit?: Money, credit?: Money, partner_id?: ?int, cohort_id?: ?int, memo_ar?: ?string}>  $lines
+     * @param  list<array{account_id: int, debit?: Money, credit?: Money, partner_id?: ?int, cohort_id?: ?int, memo_ar?: ?string, vat_treatment?: ?string}>  $lines
      */
     public function post(
         CarbonInterface $entryDate,
@@ -56,7 +59,16 @@ class JournalPoster
                 'created_by' => $createdBy,
             ]);
 
+            $accountCodes = Account::query()
+                ->whereIn('id', array_column($lines, 'account_id'))
+                ->pluck('code', 'id');
+
+            $touchesRevenue = false;
+
             foreach ($lines as $order => $line) {
+                $isRevenueLine = str_starts_with((string) $accountCodes->get($line['account_id']), '4');
+                $touchesRevenue = $touchesRevenue || $isRevenueLine;
+
                 JournalLine::query()->create([
                     'journal_entry_id' => $entry->id,
                     'account_id' => $line['account_id'],
@@ -66,7 +78,18 @@ class JournalPoster
                     'cohort_id' => $line['cohort_id'] ?? $cohortId,
                     'memo_ar' => $line['memo_ar'] ?? null,
                     'line_order' => $order,
+                    // spec Phase 6: كل سطر إيراد يحمل معاملة ضريبية — الافتراض standard
+                    'vat_treatment' => $isRevenueLine ? ($line['vat_treatment'] ?? 'standard') : null,
                 ]);
+            }
+
+            // §11.2 القوائم تقرأ الملخصات؛ §8.9 المراقب يُحدَّث عند كل ترحيل إيراد
+            if ($cohortId !== null) {
+                RefreshCohortFinancialSummary::dispatch($cohortId)->afterCommit();
+            }
+
+            if ($touchesRevenue) {
+                RecomputeVatRollingTotal::dispatch()->afterCommit();
             }
 
             return $entry;

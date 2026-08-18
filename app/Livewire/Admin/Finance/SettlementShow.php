@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Finance;
 
 use App\Enums\SettlementStatus;
+use App\Enums\SettlementType;
 use App\Finance\SettlementService;
 use App\Models\Settlement;
 use DomainException;
@@ -76,12 +77,13 @@ class SettlementShow extends Component
         $flags = $settlement->snapshot['flags'] ?? [];
 
         try {
-            $settlement = app(SettlementService::class)->confirm(
-                $settlement,
-                (int) auth()->id(),
-                acceptLoss: $this->accept_loss || in_array('OVERCOMMITTED', $flags, true),
-                overrideReasonAr: $this->override_reason !== '' ? $this->override_reason : null,
-            );
+            $service = app(SettlementService::class);
+            $acceptLoss = $this->accept_loss || in_array('OVERCOMMITTED', $flags, true);
+            $override = $this->override_reason !== '' ? $this->override_reason : null;
+
+            $settlement = $settlement->type === SettlementType::Monthly
+                ? $service->confirmMonthly($settlement, (int) auth()->id(), $acceptLoss, $override)
+                : $service->confirm($settlement, (int) auth()->id(), $acceptLoss, $override);
         } catch (DomainException $exception) {
             $message = match ($exception->getMessage()) {
                 'LOSS' => __('finance.flag_loss_text'),

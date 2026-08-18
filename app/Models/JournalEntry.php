@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\JournalEntryStatus;
 use App\Observers\JournalEntryObserver;
+use App\Support\DateOnlyCast;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Model;
@@ -30,7 +31,7 @@ class JournalEntry extends Model
 
     /** @var array<string, string> */
     protected $casts = [
-        'entry_date' => 'date',
+        'entry_date' => DateOnlyCast::class,
         'status' => JournalEntryStatus::class,
         'created_at' => 'datetime',
     ];

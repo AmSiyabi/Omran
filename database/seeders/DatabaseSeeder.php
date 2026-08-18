@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             ChartOfAccountsSeeder::class,
             DistributionPolicySeeder::class,
+            TaxSettingsSeeder::class,
         ]);
     }
 }

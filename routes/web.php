@@ -23,7 +23,10 @@ use App\Livewire\Admin\Enrollments\EnrollmentsIndex;
 use App\Livewire\Admin\Finance\FinanceHub;
 use App\Livewire\Admin\Finance\SettlementShow;
 use App\Livewire\Admin\Finance\SettlementsIndex;
+use App\Livewire\Admin\Reports\ReportsHub;
+use App\Livewire\Admin\Reports\TaxScreen;
 use App\Livewire\Admin\Security;
+use App\Livewire\Admin\SettingsPage;
 use App\Livewire\Admin\TwoFactorSetup;
 use Illuminate\Support\Facades\Route;
 
@@ -138,5 +141,18 @@ Route::middleware(['auth', 'verified', 'role:owner|admin|coordinator|viewer', '2
             Route::get('/finance/settlements/{settlement}', SettlementShow::class)
                 ->whereNumber('settlement')
                 ->name('finance.settlements.show');
+        });
+
+        // التقارير والضرائب — Phase 6
+        Route::middleware('permission:reports.view')->group(function (): void {
+            Route::get('/reports', ReportsHub::class)->name('reports');
+        });
+
+        Route::middleware('permission:reports.tax')->group(function (): void {
+            Route::get('/reports/tax', TaxScreen::class)->name('reports.tax');
+        });
+
+        Route::middleware('permission:settings.manage')->group(function (): void {
+            Route::get('/settings', SettingsPage::class)->name('settings');
         });
     });

@@ -313,3 +313,58 @@ RTL grep clean · assets build clean.
 - Monthly settlement computation deferred to Phase 6 — D-040.
 - Loss journal treatment defined (spec silent) — D-041.
 - DB-level REVOKE on journal tables → Phase 8 provisioning — D-038.
+
+## Phase 6 — Reporting and tax ✅
+
+**Completed:** 2026-08-18
+
+### Built
+- **Materialized summaries** (§11.2): `cohort_financial_summaries` refreshed
+  by a queued job `afterCommit()` on every cohort journal write (D-043);
+  queue worker container added to compose. `vat_treatment` enum on revenue
+  journal lines (standard/zero_rated/exempt/out_of_scope), backfilled.
+- **The seven reports** (§8.10): income statement (accrual/cash toggle),
+  direct-method cash flow, cohort profitability (reads summaries), partner
+  statement with running balance, receivables aging (FIFO, 0–30/31–60/
+  61–90/90+), annual partner income, VAT position — one `ReportsHub`
+  Livewire component with URL-bound filters.
+- **VAT monitor** (§8.9): rolling 12-month taxable supplies recomputed on
+  every revenue posting + nightly at 02:00; green/amber/orange/red states;
+  zero-rated counts toward registration, exempt does not.
+- **Tax screen** (owner-only): VAT position, CIT estimate (15%/3% from
+  settings), PIT 2028 note, non-removable مجرد-تقدير disclaimer.
+- **Monthly settlement** (§8.6, closes D-040): aggregate delivered cohorts
+  of the month, period opex deducted from the center pool per the editable
+  toggle, both figures side by side, one balanced journal, reversal reopens
+  all cohorts (D-044).
+- **Owner dashboard**: real cash/receivables/MTD-revenue/partner balances,
+  CSP-safe SVG VAT gauge, upcoming cohorts — 19–33ms at 5,000 entries.
+- **Exports**: every report to RTL-sheet XLSX and Arabic-shaped PDF
+  (Tajawal, D-045) with brand header. `docs/FINANCE.md` explains the ledger
+  to the owners in plain Arabic.
+- **Settings page** (owner-only): opex toggle + all seven tax thresholds.
+- `app:seed-demo-journal` perf fixture (5,000 balanced entries, seeded PRNG).
+
+### Acceptance results
+| Criterion | Result |
+|---|---|
+| Income statement ties exactly to journal-line sums | ✅ tie-out test vs raw SUM |
+| Cash-flow closing = 1010+1020+1030 balances | ✅ |
+| Partner-statement closing = 302x journal balance | ✅ running balance too |
+| VAT rolling window correct across a year boundary | ✅ 13-months-ago excluded, 11 included; exempt excluded |
+| §8.6 monthly math: pool − opex, both figures, 50/50 | ✅ contract's literal example: 600.000 − 42.500 → 278.750 each |
+| Dashboard < 400ms @ 5,000 entries | ✅ 19–33ms on MySQL (perf-probe); sqlite regression test |
+| Thresholds all editable, nothing hardcoded | ✅ settings save test + VAT threshold override test |
+| XLSX (RTL sheet) and PDF download | ✅ Livewire download tests; PDF shaping per D-045 |
+| reports.view / reports.tax / settings.manage enforced | ✅ route + component-mount + action re-auth tests |
+| 375px: dashboard/reports/tax/settings no overflow | ✅ 6 screenshots, 0px overflow each |
+
+**Checks:** Pint clean · Larastan level 6, 0 errors · Pest **202/202**
+(12,624 assertions) · RTL grep clean.
+
+### Notes / deviations
+- Acceptance tests caught two real bugs — `vat_treatment` missing from
+  fillable (VAT monitor always zero) and date-cast serialization — D-046.
+- CIT reduced-rate eligibility estimated by income limit only; the other
+  statutory conditions are surfaced as an assumption in the UI.
+- El Messiri unusable in mPDF → PDFs are Tajawal-only — D-045.

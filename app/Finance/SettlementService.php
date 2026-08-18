@@ -8,8 +8,13 @@ use App\Enums\SettlementType;
 use App\Models\Account;
 use App\Models\Cohort;
 use App\Models\JournalEntry;
+use App\Models\JournalLine;
+use App\Models\Partner;
+use App\Models\Setting;
 use App\Models\Settlement;
+use Carbon\CarbonInterface;
 use DomainException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -111,6 +116,227 @@ class SettlementService
     }
 
     /**
+     * التصفية الشهرية (§8.6, D-040): كل الدفعات المنفذة غير المصفاة في
+     * الشهر تُحسب دفعة دفعة، وتُخصم مصروفات الفترة التشغيلية من وعاء
+     * المركز قبل القسمة (حسب الإعداد) — ويظهر الرقمان جنباً إلى جنب.
+     */
+    public function computeMonthlyDraft(int $year, int $month): Settlement
+    {
+        $periodStart = Carbon::create($year, $month, 1)->startOfDay();
+        $periodEnd = $periodStart->copy()->endOfMonth();
+
+        $cohorts = Cohort::query()
+            ->where('status', CohortStatus::Delivered)
+            ->whereBetween('ends_at', [$periodStart, $periodEnd])
+            ->whereDoesntHave('settlements', fn ($query) => $query->whereIn('status', ['draft', 'posted']))
+            ->orderBy('ends_at')
+            ->get();
+
+        if ($cohorts->isEmpty()) {
+            throw new DomainException('لا توجد دفعات منفذة غير مصفاة في هذا الشهر.');
+        }
+
+        $perCohort = [];
+        $flags = [];
+        $gross = 0;
+        $directCosts = 0;
+        $net = 0;
+        $delivererTotal = 0;
+        $centerTotal = 0;
+
+        foreach ($cohorts as $cohort) {
+            $result = $this->engine->compute($cohort);
+
+            $perCohort[] = ['cohort_id' => $cohort->id, 'code' => $cohort->code] + $result->toSnapshot();
+            $flags = array_values(array_unique([...$flags, ...$result->flags]));
+            $gross += $result->grossRevenue->baisa;
+            $directCosts += $result->directCosts->baisa;
+            $net += $result->netDistributable->baisa;
+            $delivererTotal += $result->delivererTotal->baisa;
+            $centerTotal += $result->centerShare->baisa;
+        }
+
+        $opex = $this->opexChargedToPool() ? $this->periodOpex($periodStart, $periodEnd) : 0;
+        $distributable = $centerTotal - $opex;
+
+        if ($distributable < 0 && ! in_array('LOSS', $flags, true)) {
+            $flags[] = 'LOSS';
+        }
+
+        return Settlement::query()->create([
+            'settlement_number' => $this->nextNumber(),
+            'type' => SettlementType::Monthly,
+            'period_start' => $periodStart->toDateString(),
+            'period_end' => $periodEnd->toDateString(),
+            'gross_revenue_baisa' => $gross,
+            'direct_costs_baisa' => $directCosts,
+            'net_distributable_baisa' => $net,
+            'deliverer_total_baisa' => $delivererTotal,
+            'center_share_baisa' => $centerTotal,
+            'center_opex_allocated_baisa' => $opex,
+            'distributable_profit_baisa' => $distributable,
+            'status' => SettlementStatus::Draft,
+            'computed_at' => now(),
+            'snapshot' => [
+                'type' => 'monthly',
+                'period' => [$periodStart->toDateString(), $periodEnd->toDateString()],
+                'cohorts' => $perCohort,
+                'center_share_total_baisa' => $centerTotal,
+                'opex_baisa' => $opex,
+                'distributable_baisa' => $distributable,
+                'opex_charged_to_center_pool' => $this->opexChargedToPool(),
+                'center_allocations' => $this->allocateDistributable($distributable),
+                'flags' => $flags,
+            ],
+        ]);
+    }
+
+    public function confirmMonthly(Settlement $settlement, int $confirmedBy, bool $acceptLoss = false, ?string $overrideReasonAr = null): Settlement
+    {
+        $this->assertDraft($settlement);
+
+        if ($settlement->type !== SettlementType::Monthly) {
+            throw new DomainException('Not a monthly settlement.');
+        }
+
+        return DB::transaction(function () use ($settlement, $confirmedBy, $acceptLoss, $overrideReasonAr): Settlement {
+            $snapshot = $settlement->snapshot;
+            $flags = $snapshot['flags'] ?? [];
+
+            if (in_array('LOSS', $flags, true) && ! $acceptLoss) {
+                throw new DomainException('LOSS');
+            }
+
+            if (in_array('OVERCOMMITTED', $flags, true) && ($overrideReasonAr === null || trim($overrideReasonAr) === '')) {
+                throw new DomainException('OVERCOMMITTED');
+            }
+
+            $lines = [];
+            $currentAccounts = $this->partnerCurrentAccounts();
+
+            // استحقاقات المنفذين لكل دفعة
+            foreach ($snapshot['cohorts'] as $cohortResult) {
+                foreach ($cohortResult['deliverer_allocations'] as $allocation) {
+                    if ($allocation['amount_baisa'] === 0) {
+                        continue;
+                    }
+
+                    $amount = new Money($allocation['amount_baisa']);
+
+                    if ($allocation['type'] === 'partner') {
+                        $lines[] = ['account_id' => Account::byCode('5010')->id, 'debit' => $amount, 'partner_id' => $allocation['partner_id'], 'cohort_id' => $cohortResult['cohort_id'], 'memo_ar' => 'حصة الشريك المنفذ — '.$allocation['name'].' ('.$cohortResult['code'].')'];
+                        $lines[] = ['account_id' => $currentAccounts[$allocation['partner_id']], 'credit' => $amount, 'partner_id' => $allocation['partner_id'], 'memo_ar' => 'استحقاق تنفيذ — '.$cohortResult['code']];
+                    } else {
+                        $lines[] = ['account_id' => Account::byCode('5020')->id, 'debit' => $amount, 'cohort_id' => $cohortResult['cohort_id'], 'memo_ar' => 'أتعاب مدرب خارجي — '.$allocation['name']];
+                        $lines[] = ['account_id' => Account::byCode('2020')->id, 'credit' => $amount, 'memo_ar' => 'مستحق للمدرب — '.$allocation['name']];
+                    }
+                }
+            }
+
+            // توزيع الوعاء الصافي (حصة المركز − مصروفات الفترة) على الشريكين
+            foreach ($snapshot['center_allocations'] as $allocation) {
+                if ($allocation['amount_baisa'] === 0) {
+                    continue;
+                }
+
+                $amount = new Money(abs($allocation['amount_baisa']));
+
+                if ($allocation['amount_baisa'] > 0) {
+                    $lines[] = ['account_id' => Account::byCode('3090')->id, 'debit' => $amount, 'memo_ar' => 'توزيع أرباح الفترة'];
+                    $lines[] = ['account_id' => $currentAccounts[$allocation['partner_id']], 'credit' => $amount, 'partner_id' => $allocation['partner_id'], 'memo_ar' => 'حصة من أرباح الفترة — '.$allocation['name']];
+                } else {
+                    $lines[] = ['account_id' => $currentAccounts[$allocation['partner_id']], 'debit' => $amount, 'partner_id' => $allocation['partner_id'], 'memo_ar' => 'نصيب من خسارة الفترة — '.$allocation['name']];
+                    $lines[] = ['account_id' => Account::byCode('3090')->id, 'credit' => $amount, 'memo_ar' => 'تحميل خسارة الفترة'];
+                }
+            }
+
+            if ($lines === []) {
+                throw new DomainException('Monthly settlement produced no journal lines.');
+            }
+
+            $entry = $this->poster->post(
+                entryDate: now(),
+                descriptionAr: 'تصفية شهرية — '.$settlement->period_start->translatedFormat('F Y'),
+                lines: $lines,
+                createdBy: $confirmedBy,
+                referenceType: 'settlement',
+                referenceId: $settlement->id,
+            );
+
+            foreach ($snapshot['cohorts'] as $cohortResult) {
+                Cohort::query()->findOrFail($cohortResult['cohort_id'])->transitionTo(CohortStatus::Settled);
+            }
+
+            $settlement->update([
+                'status' => SettlementStatus::Posted,
+                'journal_entry_id' => $entry->id,
+                'confirmed_by' => $confirmedBy,
+                'confirmed_at' => now(),
+                'notes_ar' => $overrideReasonAr !== null && trim($overrideReasonAr) !== ''
+                    ? 'سبب التجاوز: '.trim($overrideReasonAr)
+                    : $settlement->notes_ar,
+                'snapshot' => $snapshot + [
+                    'confirmed_at' => now()->toIso8601String(),
+                    'journal_entry_number' => $entry->entry_number,
+                    'accepted_loss' => $acceptLoss,
+                    'override_reason' => $overrideReasonAr,
+                ],
+            ]);
+
+            return $settlement->refresh();
+        });
+    }
+
+    protected function opexChargedToPool(): bool
+    {
+        return (bool) Setting::get('opex_charged_to_center_pool', true);
+    }
+
+    protected function periodOpex(CarbonInterface $start, CarbonInterface $end): int
+    {
+        return (int) JournalLine::query()
+            ->join('accounts', 'accounts.id', '=', 'journal_lines.account_id')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
+            ->where('journal_entries.status', 'posted')
+            ->where('accounts.code', 'like', '6%')
+            ->whereBetween('journal_entries.entry_date', [$start->toDateString(), $end->toDateString()])
+            ->selectRaw('COALESCE(SUM(journal_lines.debit_baisa - journal_lines.credit_baisa), 0) as total')
+            ->toBase()
+            ->value('total');
+    }
+
+    /**
+     * @return list<array{partner_id: int, name: string, ownership: string, amount_baisa: int}>
+     */
+    protected function allocateDistributable(int $distributable): array
+    {
+        $partners = Partner::query()->where('is_active', true)->orderBy('id')->get();
+
+        if ($partners->isEmpty()) {
+            throw new DomainException('No active partners.');
+        }
+
+        if ($distributable === 0) {
+            return $partners->map(fn ($partner) => [
+                'partner_id' => $partner->id,
+                'name' => $partner->display_name_ar,
+                'ownership' => (string) $partner->ownership_percent,
+                'amount_baisa' => 0,
+            ])->values()->all();
+        }
+
+        $weights = $partners->mapWithKeys(fn ($partner) => [$partner->id => (string) $partner->ownership_percent])->all();
+        $shares = (new Money($distributable))->allocate($weights);
+
+        return $partners->map(fn ($partner) => [
+            'partner_id' => $partner->id,
+            'name' => $partner->display_name_ar,
+            'ownership' => (string) $partner->ownership_percent,
+            'amount_baisa' => $shares[$partner->id]->baisa,
+        ])->values()->all();
+    }
+
+    /**
      * Reversal: reversing journal entry, settlement marked reversed, cohort
      * reopened to delivered so it can be settled again (D-039).
      */
@@ -129,9 +355,15 @@ class SettlementService
             ]);
 
             // استثناء موثق لقاعدة الانتقالات: التصفية المعكوسة تعيد الدفعة
-            // إلى "منفذة" لتُصفى من جديد
-            $cohort = $settlement->cohort;
-            $cohort->forceFill(['status' => CohortStatus::Delivered])->save();
+            // (أو دفعات الشهر كلها) إلى "منفذة" لتُصفى من جديد
+            if ($settlement->type === SettlementType::Monthly) {
+                foreach ($settlement->snapshot['cohorts'] ?? [] as $cohortResult) {
+                    Cohort::query()->whereKey($cohortResult['cohort_id'])->first()
+                        ?->forceFill(['status' => CohortStatus::Delivered])->save();
+                }
+            } else {
+                $settlement->cohort?->forceFill(['status' => CohortStatus::Delivered])->save();
+            }
 
             return $settlement->refresh();
         });

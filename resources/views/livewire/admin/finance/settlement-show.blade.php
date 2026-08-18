@@ -80,6 +80,42 @@
         </x-card>
     @endif
 
+    {{-- الشهرية: وعاء المركز − مصروفات الفترة (§8.6) --}}
+    @if ($settlement->type === \App\Enums\SettlementType::Monthly)
+        <x-card class="mt-4" :padding="false">
+            <dl class="divide-y divide-line text-sm">
+                <div class="flex justify-between gap-3 px-5 py-3">
+                    <dt class="text-muted">{{ __('finance.monthly_center_pool') }}</dt>
+                    <dd class="font-bold text-navy" dir="ltr">{{ $fmt($snapshot['center_share_total_baisa'] ?? 0) }}</dd>
+                </div>
+                <div class="flex justify-between gap-3 px-5 py-3">
+                    <dt class="text-muted">{{ __('finance.monthly_opex') }}</dt>
+                    <dd class="font-medium text-navy" dir="ltr">− {{ $fmt($snapshot['opex_baisa'] ?? 0) }}</dd>
+                </div>
+                <div class="flex justify-between gap-3 bg-cream/60 px-5 py-3">
+                    <dt class="font-bold text-navy">{{ __('finance.monthly_distributable') }}</dt>
+                    <dd @class(['font-bold', 'text-navy' => ($snapshot['distributable_baisa'] ?? 0) >= 0, 'text-error' => ($snapshot['distributable_baisa'] ?? 0) < 0]) dir="ltr">
+                        {{ $fmt($snapshot['distributable_baisa'] ?? 0) }}
+                    </dd>
+                </div>
+            </dl>
+        </x-card>
+
+        @if (($snapshot['cohorts'] ?? []) !== [])
+            <x-card class="mt-4" :padding="false">
+                <x-slot:header><h2 class="font-bold text-navy">{{ __('finance.monthly_cohorts_included') }}</h2></x-slot:header>
+                <ul class="divide-y divide-line text-sm">
+                    @foreach ($snapshot['cohorts'] as $cohortResult)
+                        <li class="flex justify-between gap-3 px-5 py-3">
+                            <span class="font-mono text-xs text-muted" dir="ltr">{{ $cohortResult['code'] }}</span>
+                            <span class="font-medium text-navy" dir="ltr">{{ $fmt($cohortResult['net_distributable_baisa']) }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </x-card>
+        @endif
+    @endif
+
     {{-- توزيع المركز --}}
     <x-card class="mt-4" :padding="false">
         <x-slot:header>

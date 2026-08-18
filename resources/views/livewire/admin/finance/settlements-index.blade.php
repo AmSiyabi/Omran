@@ -27,6 +27,17 @@
         @endif
     </x-card>
 
+    {{-- التصفية الشهرية (§8.6) --}}
+    <x-card class="mt-5">
+        <h2 class="font-bold text-navy">{{ __('finance.monthly_settlement') }}</h2>
+        <div class="mt-3 flex flex-wrap items-end gap-3">
+            <x-input :label="__('finance.monthly_month')" name="monthlyPeriod" type="month" wire:model="monthlyPeriod" />
+            <x-button variant="secondary" wire:click="computeMonthly" wire:loading.attr="disabled" wire:target="computeMonthly">
+                {{ __('finance.compute_monthly') }}
+            </x-button>
+        </div>
+    </x-card>
+
     {{-- سجل التصفيات --}}
     <x-card class="mt-5" :padding="false">
         @if ($settlements->isEmpty())

@@ -336,3 +336,45 @@ JournalLine and Settlement amounts cast to the Money VO. Catalog columns
 from earlier phases (cohort price, enrollment amounts) keep int casts + the
 Baisa helper — retrofitting them mid-project would churn working code for no
 correctness gain. New financial tables must use MoneyCast.
+
+---
+
+## 2026-08-18 — Phase 6
+
+### D-043 · Reports read materialized summaries; the journal stays truth
+`cohort_financial_summaries` is a full recompute per cohort (idempotent, no
+incremental deltas to drift) refreshed by a queued job dispatched
+`afterCommit()` on every journal write touching that cohort; a dedicated
+queue worker container runs it. The cohort P&L list reads summaries; every
+other report queries the journal directly — indexed SUMs at this ledger's
+scale (measured 19–33ms at 5,000 entries on MySQL) need no caching layer.
+
+### D-044 · Monthly settlement arithmetic (§8.6)
+The monthly draft runs the per-cohort DistributionEngine over every
+delivered-unsettled cohort ending in the month, then deducts the period's
+6xxx opex from the aggregated center pool before the ownership split —
+controlled by the owner-editable `opex_charged_to_center_pool` setting, with
+both figures (pool, pool−opex) shown side by side as the contract requires.
+Deliverer shares post per cohort (5010/5020 with cohort linkage); the
+distributable pool posts once (Dr 3090 / Cr 302x, inverted for losses).
+Reversal reopens **all** cohorts in the snapshot. Loss/overcommit gates
+mirror the per-cohort flow (D-041).
+
+### D-045 · PDFs ship Tajawal-only; shaping verified via pdftotext
+mPDF rejects El Messiri (`contains MarkGlyphSets — Not tested yet`), so PDF
+exports embed Tajawal R/B with `useOTL 0xFF` + `useKashida 75`; headings are
+bold Tajawal instead of the brand display face — screen and XLSX keep El
+Messiri. Shaping was verified programmatically: `pdftotext -raw` output
+contains Arabic presentation forms with single-glyph lam-alef ligatures and
+attached diacritics, which only a correctly shaped PDF produces.
+
+### D-046 · entry_date stored as a bare Y-m-d via custom cast
+Two bugs the Phase 6 acceptance tests caught: (1) `vat_treatment` was
+missing from JournalLine's `#[Fillable]`, so the poster's value silently
+dropped and the VAT monitor always read zero — fillable lists on
+append-only models now get a tie-out test. (2) Laravel's built-in `date`
+cast serializes through `Y-m-d H:i:s`; MySQL DATE truncates it, but sqlite
+(tests) stores the full string, so same-day entries sorted *after* the
+`Y-m-d` upper bound of every `whereBetween` and vanished from reports.
+`entry_date` now uses `DateOnlyCast`, which stores exactly `Y-m-d` on every
+driver.
