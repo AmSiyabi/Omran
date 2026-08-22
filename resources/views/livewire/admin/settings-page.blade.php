@@ -1,7 +1,7 @@
-<div class="mx-auto max-w-2xl">
+<div class="mx-auto max-w-2xl pb-24">
     <h1 class="text-2xl text-navy">{{ __('finance.settings') }}</h1>
 
-    <form wire:submit="save" class="mt-6 space-y-6">
+    <form id="settings-form" wire:submit="save" class="mt-6 space-y-6">
         <x-card>
             <h2 class="font-bold text-navy">{{ __('finance.settlements') }}</h2>
             <label class="mt-4 flex min-h-11 items-start gap-2 text-sm text-navy">
@@ -26,8 +26,18 @@
             </div>
         </x-card>
 
-        <div class="flex gap-2">
-            <x-button type="submit" target="save" :loading-label="__('common.saving')">{{ __('common.save') }}</x-button>
-        </div>
     </form>
+
+    {{-- شريط الحفظ الثابت — القانون: زر الحفظ ظاهر دائماً --}}
+    <div class="fixed inset-x-0 bottom-16 z-30 border-t border-line bg-cream/95 px-4 py-3 backdrop-blur lg:bottom-0 lg:ms-64">
+        <div class="mx-auto flex max-w-2xl flex-row-reverse items-center justify-start gap-2">
+            <x-button type="submit" form="settings-form" target="save" :loading-label="__('common.saving')">{{ __('common.save') }}</x-button>
+            <span
+                wire:dirty
+                data-dirty-marker
+                data-confirm="{{ __('common.leave_unsaved_confirm') }}"
+                class="me-auto text-xs font-medium text-warning"
+            >{{ __('common.unsaved_changes') }}</span>
+        </div>
+    </div>
 </div>

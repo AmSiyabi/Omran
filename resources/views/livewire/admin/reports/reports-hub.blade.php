@@ -27,7 +27,7 @@
         @endif
 
         @if ($report === 'income')
-            <x-select :label="null" name="basis" wire:model.live="basis">
+            <x-select :label="null" name="basis" wire:model.live="basis" aria-label="{{ __('finance.basis_label') }}">
                 <option value="accrual">{{ __('finance.basis_accrual') }}</option>
                 <option value="cash">{{ __('finance.basis_cash') }}</option>
             </x-select>
@@ -64,17 +64,22 @@
         @elseif ($report === 'cashflow')
             @include('livewire.admin.reports.pdf.cashflow')
         @elseif ($report === 'cohorts')
-            @include('livewire.admin.reports.pdf.cohorts')
+            {{-- الجداول العريضة: بطاقات تحت md، جدول فوقها (نفس جزئية الـPDF) --}}
+            <div class="md:hidden">@include('livewire.admin.reports.mobile.cohorts')</div>
+            <div class="hidden md:block">@include('livewire.admin.reports.pdf.cohorts')</div>
         @elseif ($report === 'partner')
             @if ($statement === null)
                 <x-empty-state :title="__('common.choose')" :description="__('finance.report_partner')" />
             @else
-                @include('livewire.admin.reports.pdf.partner')
+                <div class="md:hidden">@include('livewire.admin.reports.mobile.partner')</div>
+                <div class="hidden md:block">@include('livewire.admin.reports.pdf.partner')</div>
             @endif
         @elseif ($report === 'aging')
-            @include('livewire.admin.reports.pdf.aging')
+            <div class="md:hidden">@include('livewire.admin.reports.mobile.aging')</div>
+            <div class="hidden md:block">@include('livewire.admin.reports.pdf.aging')</div>
         @elseif ($report === 'annual')
-            @include('livewire.admin.reports.pdf.annual')
+            <div class="md:hidden">@include('livewire.admin.reports.mobile.annual')</div>
+            <div class="hidden md:block">@include('livewire.admin.reports.pdf.annual')</div>
         @elseif ($report === 'vat')
             @include('livewire.admin.reports.pdf.vat')
         @endif

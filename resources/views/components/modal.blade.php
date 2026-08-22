@@ -20,7 +20,7 @@
 --}}
 <div
     x-data="{ open: false }"
-    x-on:open-modal.window="if ($event.detail === '{{ $name }}') open = true"
+    x-on:open-modal.window="if ($event.detail === '{{ $name }}') { open = true; $nextTick(() => focusFirstIn($refs.panel)) }"
     x-on:close-modal.window="if ($event.detail === '{{ $name }}') open = false"
     x-on:keydown.escape.window="open = false"
 >
@@ -32,6 +32,7 @@
             role="dialog"
             aria-modal="true"
             @if ($title) aria-label="{{ $title }}" @endif
+            x-on:keydown.tab="trapTab($refs.panel, $event)"
         >
             <div
                 x-show="open"
@@ -50,6 +51,8 @@
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
                 class="relative w-full {{ $width }} rounded-t-2xl bg-cream p-6 shadow-xl sm:rounded-2xl"
+                x-ref="panel"
+                data-modal-panel
             >
                 <div class="flex items-start justify-between gap-4">
                     @if ($title)
@@ -60,6 +63,7 @@
                         type="button"
                         class="-m-2 flex size-10 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-navy/5 hover:text-navy focus-visible:outline-2 focus-visible:outline-gold"
                         x-on:click="open = false"
+                        data-modal-close
                         aria-label="{{ __('common.close') }}"
                     >
                         <svg class="size-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">

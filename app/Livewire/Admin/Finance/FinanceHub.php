@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Lazy;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -25,9 +26,15 @@ use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 #[Layout('components.layouts.admin')]
+#[Lazy]
 class FinanceHub extends Component
 {
     use WithFileUploads, WithPagination;
+
+    public function placeholder(): View
+    {
+        return view('livewire.admin.placeholders.finance');
+    }
 
     /** الإجراء المفتوح حالياً: revenue|payment|direct_cost|opex|payout|contribution */
     public ?string $action = null;

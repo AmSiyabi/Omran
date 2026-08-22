@@ -45,6 +45,15 @@
                     @foreach ($enrollments as $enrollment)
                         @php $record = $records->get($enrollment->id); @endphp
                         <li wire:key="attendance-{{ $enrollment->id }}">
+                            @php
+                                $variantOf = fn (App\Enums\AttendanceStatus $status) => match ($status) {
+                                    App\Enums\AttendanceStatus::Present => 'success',
+                                    App\Enums\AttendanceStatus::Absent => 'error',
+                                    App\Enums\AttendanceStatus::Late => 'warning',
+                                    App\Enums\AttendanceStatus::Excused => 'info',
+                                };
+                                $nextStatus = $record === null ? App\Enums\AttendanceStatus::Present : $record->status->next();
+                            @endphp
                             <button
                                 type="button"
                                 wire:click="toggle({{ $enrollment->id }})"
@@ -57,18 +66,17 @@
                                     @endif
                                 </span>
 
-                                @if ($record === null)
-                                    <x-badge variant="neutral">—</x-badge>
-                                @else
-                                    <x-badge :variant="match ($record->status) {
-                                        App\Enums\AttendanceStatus::Present => 'success',
-                                        App\Enums\AttendanceStatus::Absent => 'error',
-                                        App\Enums\AttendanceStatus::Late => 'warning',
-                                        App\Enums\AttendanceStatus::Excused => 'info',
-                                    }">
-                                        {{ $record->status->label() }}
-                                    </x-badge>
-                                @endif
+                                {{-- تفاؤلي: أثناء الطلب تظهر الحالة التالية فوراً، ورد الخادم يثبّتها --}}
+                                <span wire:loading.remove wire:target="toggle({{ $enrollment->id }})">
+                                    @if ($record === null)
+                                        <x-badge variant="neutral">—</x-badge>
+                                    @else
+                                        <x-badge :variant="$variantOf($record->status)">{{ $record->status->label() }}</x-badge>
+                                    @endif
+                                </span>
+                                <span wire:loading wire:target="toggle({{ $enrollment->id }})">
+                                    <x-badge :variant="$variantOf($nextStatus)">{{ $nextStatus->label() }}</x-badge>
+                                </span>
                             </button>
                         </li>
                     @endforeach

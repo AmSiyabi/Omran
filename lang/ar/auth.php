@@ -37,6 +37,8 @@ return [
     'reset_password' => 'إعادة التعيين',
     'reset_password_title' => 'إعادة تعيين كلمة المرور',
     'revoke_session' => 'إنهاء الجلسة',
+    'revoke_session_body' => 'ستُنهى جلسة :browser فوراً وسيُسجَّل الخروج من ذلك الجهاز.',
+    'revoke_session_title' => 'إنهاء الجلسة؟',
     'security_title' => 'الأمان',
     'send_reset_link' => 'إرسال رابط الاستعادة',
     'session_revoked' => 'تم إنهاء الجلسة',

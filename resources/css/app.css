@@ -90,19 +90,21 @@
     --color-gold: #cda34f;
     --color-gold-light: #e4c67e;
     --color-gold-deep: #b8893a;
+    /* ذهبي للنصوص الصغيرة على أبيض — 5.3:1 (WCAG AA) */
+    --color-gold-ink: #8a6528;
 
     --color-cream: #f4efe3;
     --color-cream-warm: #f1e7d2;
 
-    --color-muted: #6a7383;
+    --color-muted: #5b6474;
     --color-line: #e4dcc9;
 
     /* حالات الواجهة — منسجمة مع اللوحة */
-    --color-success: #2e7d5b;
+    --color-success: #276b4e;
     --color-success-soft: #e7f1ec;
     --color-error: #a8433e;
     --color-error-soft: #f6e9e8;
-    --color-warning: #a06d1e;
+    --color-warning: #855a15;
     --color-warning-soft: #f5ecda;
     --color-info: #3e5c76;
     --color-info-soft: #e8eef4;
@@ -153,6 +155,13 @@
    spec §5.2: motion serves reading; reduced-motion wins absolutely
    ------------------------------------------------------------------ */
 @layer components {
+    /* لوحة الأوامر: النتيجة النشطة (تمييز بلوحة المفاتيح) */
+    .palette-active {
+        background-color: color-mix(in srgb, var(--color-navy) 6%, transparent);
+        outline: 2px solid color-mix(in srgb, var(--color-gold) 55%, transparent);
+        outline-offset: -2px;
+    }
+
     /* تسلسل البطل: الشعار يستقر، ثم سطر الأطروحة، ثم الأزرار */
     @keyframes settle {
         from {

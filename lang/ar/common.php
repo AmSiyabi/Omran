@@ -33,6 +33,15 @@ return [
     'loading' => 'جارٍ التحميل',
     'saving' => 'جارٍ الحفظ',
     'sending' => 'جارٍ الإرسال',
+    'unsaved_changes' => 'تغييرات غير محفوظة',
+    'leave_unsaved_confirm' => 'لديك تغييرات غير محفوظة. هل تريد المغادرة دون حفظ؟',
+
+    // لوحة الأوامر
+    'palette_title' => 'بحث وتنقّل سريع',
+    'palette_placeholder' => 'انتقل إلى… أو ابحث عن دورة أو دفعة',
+    'palette_nav' => 'التنقل',
+    'palette_courses' => 'الدورات',
+    'palette_cohorts' => 'الدفعات',
 
     // تنبيهات وأخطاء
     'notifications' => 'التنبيهات',

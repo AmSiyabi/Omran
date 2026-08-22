@@ -38,7 +38,7 @@
                 @foreach ($outcomes_ar as $index => $outcome)
                     <div class="flex items-start gap-2" wire:key="outcome-{{ $index }}">
                         <div class="flex-1">
-                            <x-input :name="'outcomes_ar.'.$index" wire:model="outcomes_ar.{{ $index }}" />
+                            <x-input :name="'outcomes_ar.'.$index" wire:model="outcomes_ar.{{ $index }}" aria-label="{{ __('courses.outcome_number', ['n' => $index + 1]) }}" />
                         </div>
                         <button
                             type="button"
@@ -81,6 +81,7 @@
                         type="file"
                         id="cover"
                         wire:model="cover"
+                        aria-label="{{ __('courses.cover_image') }}"
                         accept="image/jpeg,image/png,image/webp,image/avif"
                         class="block w-full text-sm text-muted file:me-3 file:min-h-11 file:cursor-pointer file:rounded-lg file:border-0 file:bg-navy file:px-4 file:text-sm file:font-medium file:text-cream-warm hover:file:bg-navy-ink"
                     >
@@ -107,6 +108,12 @@
         <div class="mx-auto flex max-w-3xl flex-row-reverse items-center justify-start gap-2">
             <x-button type="submit" form="course-form" target="save" :loading-label="__('common.saving')">{{ __('common.save') }}</x-button>
             <x-button variant="ghost" :href="route('admin.courses')" wire:navigate>{{ __('common.cancel') }}</x-button>
+            <span
+                wire:dirty
+                data-dirty-marker
+                data-confirm="{{ __('common.leave_unsaved_confirm') }}"
+                class="me-auto text-xs font-medium text-warning"
+            >{{ __('common.unsaved_changes') }}</span>
         </div>
     </div>
 </div>

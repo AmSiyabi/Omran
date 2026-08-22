@@ -44,6 +44,24 @@
                 </a>
             </div>
 
+            {{-- فتح لوحة الأوامر — Ctrl+K (Phase 7) --}}
+            <div class="px-3 pt-3">
+                <button
+                    type="button"
+                    x-data
+                    x-on:click="$dispatch('open-palette')"
+                    class="flex min-h-10 w-full items-center justify-between gap-2 rounded-lg border border-cream-warm/15 px-3 text-sm text-cream-warm/70 transition-colors hover:border-cream-warm/30 hover:text-cream-warm focus-visible:outline-2 focus-visible:outline-gold"
+                >
+                    <span class="flex items-center gap-2">
+                        <svg class="size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11zM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9z" clip-rule="evenodd" />
+                        </svg>
+                        {{ __('common.palette_title') }}
+                    </span>
+                    <kbd class="rounded border border-cream-warm/20 px-1.5 py-0.5 text-[10px]" dir="ltr">Ctrl K</kbd>
+                </button>
+            </div>
+
             <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label="{{ __('common.main_navigation') }}">
                 @foreach ($visibleItems as $item)
                     <a
@@ -97,6 +115,9 @@
             <livewire:admin.finance.quick-add-expense />
         @endif
 
+        {{-- لوحة الأوامر — Ctrl+K (Phase 7) --}}
+        <livewire:admin.command-palette />
+
         {{-- شريط التنقل السفلي — الجوال --}}
         {{-- inline style= is blocked by our CSP — column count via class variants --}}
         <nav
@@ -115,7 +136,7 @@
                     wire:navigate
                     @class([
                         'flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-medium',
-                        'text-gold-deep' => $item['active'],
+                        'text-gold-ink' => $item['active'],
                         'text-muted' => ! $item['active'],
                     ])
                     @if ($item['active']) aria-current="page" @endif

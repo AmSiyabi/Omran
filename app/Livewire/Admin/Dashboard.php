@@ -5,11 +5,18 @@ namespace App\Livewire\Admin;
 use App\Finance\DashboardMetrics;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Lazy;
 use Livewire\Component;
 
 #[Layout('components.layouts.admin')]
+#[Lazy]
 class Dashboard extends Component
 {
+    public function placeholder(): View
+    {
+        return view('livewire.admin.placeholders.dashboard');
+    }
+
     public function render(): View
     {
         $user = auth()->user();

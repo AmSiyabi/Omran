@@ -16,7 +16,7 @@
             wire:model.live.debounce.400ms="search"
             :placeholder="__('courses.search_cohorts')"
         />
-        <x-select name="statusFilter" wire:model.live="statusFilter">
+        <x-select name="statusFilter" wire:model.live="statusFilter" aria-label="{{ __('courses.filter_by_status') }}">
             <option value="">{{ __('courses.all_statuses') }}</option>
             @foreach ($statuses as $status)
                 <option value="{{ $status->value }}">{{ $status->label() }}</option>

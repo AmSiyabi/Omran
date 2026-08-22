@@ -9,6 +9,13 @@
 
     <title>{{ $title ? $title.' — '.config('app.name') : config('app.name') }}</title>
 
+    {{-- PWA (Phase 7): قابل للتثبيت باسم وأيقونة عربيين --}}
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/images/pwa/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="عمران">
+
     {{-- الخطان الظاهران فوق الطية فقط --}}
     <link rel="preload" href="/fonts/el-messiri-var-arabic.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/tajawal-400-arabic.woff2" as="font" type="font/woff2" crossorigin>

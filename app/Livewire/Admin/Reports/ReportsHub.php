@@ -16,11 +16,13 @@ use App\Support\Baisa;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Lazy;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 #[Layout('components.layouts.admin')]
+#[Lazy]
 class ReportsHub extends Component
 {
     public const REPORTS = ['income', 'cashflow', 'cohorts', 'partner', 'aging', 'annual', 'vat'];
@@ -55,6 +57,11 @@ class ReportsHub extends Component
         if (! in_array($this->report, self::REPORTS, true)) {
             $this->report = 'income';
         }
+    }
+
+    public function placeholder(): View
+    {
+        return view('livewire.admin.placeholders.reports');
     }
 
     public function selectReport(string $report): void

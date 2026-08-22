@@ -46,7 +46,7 @@
         @if ($enrollments->isEmpty())
             <x-empty-state :title="__('courses.no_enrollments')" />
         @else
-            <ul class="divide-y divide-line">
+            <ul class="divide-y divide-line" wire:loading.class="pointer-events-none opacity-50" wire:target="bulkApprove">
                 @foreach ($enrollments as $enrollment)
                     <li class="px-4 py-3 sm:px-5" wire:key="enrollment-{{ $enrollment->id }}">
                         <div class="flex items-start justify-between gap-3">

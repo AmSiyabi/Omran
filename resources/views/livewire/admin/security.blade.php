@@ -52,9 +52,7 @@
                         <x-button
                             variant="ghost"
                             size="sm"
-                            wire:click="revoke('{{ $session['id'] }}')"
-                            wire:loading.attr="disabled"
-                            wire:target="revoke"
+                            wire:click="confirmRevoke('{{ $session['id'] }}')"
                             class="text-error"
                         >
                             {{ __('auth.revoke_session') }}
@@ -68,4 +66,19 @@
             @endforelse
         </ul>
     </x-card>
+
+    {{-- تأكيد إنهاء الجلسة — يسمي الجهاز المستهدف --}}
+    <x-lw-modal :show="$revokingSessionId !== null" close="cancelRevoke" :title="__('auth.revoke_session_title')" maxWidth="sm">
+        @if ($this->revokingSession !== null)
+            <p class="text-sm text-navy">
+                {{ __('auth.revoke_session_body', ['browser' => $this->revokingSession['browser']]) }}
+            </p>
+            <p class="mt-1 text-xs text-muted" dir="ltr">{{ $this->revokingSession['ip'] }} · {{ $this->revokingSession['last_active']->format('Y-m-d H:i') }}</p>
+
+            <div class="mt-6 flex flex-col-reverse gap-2 sm:flex-row">
+                <x-button variant="danger" target="revoke" wire:click="revoke">{{ __('auth.revoke_session') }}</x-button>
+                <x-button variant="ghost" wire:click="cancelRevoke">{{ __('common.cancel') }}</x-button>
+            </div>
+        @endif
+    </x-lw-modal>
 </div>

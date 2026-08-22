@@ -16,13 +16,13 @@
             wire:model.live.debounce.400ms="search"
             :placeholder="__('courses.search_courses')"
         />
-        <x-select name="categoryFilter" wire:model.live="categoryFilter">
+        <x-select name="categoryFilter" wire:model.live="categoryFilter" aria-label="{{ __('courses.filter_by_category') }}">
             <option value="">{{ __('courses.all_categories') }}</option>
             @foreach ($categories as $category)
                 <option value="{{ $category->id }}">{{ $category->name_ar }}</option>
             @endforeach
         </x-select>
-        <x-select name="statusFilter" wire:model.live="statusFilter">
+        <x-select name="statusFilter" wire:model.live="statusFilter" aria-label="{{ __('courses.filter_by_status') }}">
             <option value="">{{ __('courses.all_statuses') }}</option>
             <option value="published">{{ __('courses.published') }}</option>
             <option value="draft">{{ __('courses.draft') }}</option>
@@ -69,8 +69,14 @@
                             <x-button variant="ghost" size="sm" :href="route('admin.courses.edit', $course)" wire:navigate>{{ __('common.edit') }}</x-button>
                         @endcan
                         @can('publish', $course)
-                            <x-button variant="ghost" size="sm" wire:click="togglePublish({{ $course->id }})" wire:loading.attr="disabled" wire:target="togglePublish">
-                                {{ $course->is_published ? __('courses.unpublish') : __('courses.publish') }}
+                            <x-button variant="ghost" size="sm" wire:click="togglePublish({{ $course->id }})" wire:loading.attr="disabled" wire:target="togglePublish({{ $course->id }})">
+                                {{-- تفاؤلي: التسمية المعاكسة تظهر فور النقر --}}
+                                <span wire:loading.remove wire:target="togglePublish({{ $course->id }})">
+                                    {{ $course->is_published ? __('courses.unpublish') : __('courses.publish') }}
+                                </span>
+                                <span wire:loading wire:target="togglePublish({{ $course->id }})">
+                                    {{ $course->is_published ? __('courses.publish') : __('courses.unpublish') }}
+                                </span>
                             </x-button>
                         @endcan
                         @can('delete', $course)

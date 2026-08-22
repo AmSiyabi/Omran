@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
@@ -16,6 +17,9 @@ use Livewire\Component;
 #[Layout('components.layouts.admin')]
 class Security extends Component
 {
+    #[Locked]
+    public ?string $revokingSessionId = null;
+
     /**
      * @return list<array{id: string, ip: ?string, browser: string, is_current: bool, last_active: Carbon}>
      */
@@ -38,19 +42,49 @@ class Security extends Component
             ->all();
     }
 
-    public function revoke(string $sessionId): void
+    public function confirmRevoke(string $sessionId): void
+    {
+        if ($sessionId === session()->getId()) {
+            return;
+        }
+
+        $this->revokingSessionId = $sessionId;
+    }
+
+    public function cancelRevoke(): void
+    {
+        $this->revokingSessionId = null;
+    }
+
+    /**
+     * @return array{id: string, ip: ?string, browser: string, is_current: bool, last_active: Carbon}|null
+     */
+    #[Computed]
+    public function revokingSession(): ?array
+    {
+        foreach ($this->sessions() as $session) {
+            if ($session['id'] === $this->revokingSessionId) {
+                return $session;
+            }
+        }
+
+        return null;
+    }
+
+    public function revoke(): void
     {
         // Scope to the authenticated user — a foreign session id is a no-op.
         // The current session cannot be revoked from here (use logout).
-        if ($sessionId === session()->getId()) {
+        if ($this->revokingSessionId === null || $this->revokingSessionId === session()->getId()) {
             return;
         }
 
         DB::table('sessions')
             ->where('user_id', auth()->id())
-            ->where('id', $sessionId)
+            ->where('id', $this->revokingSessionId)
             ->delete();
 
+        $this->revokingSessionId = null;
         unset($this->sessions);
 
         $this->dispatch('toast', type: 'success', message: __('auth.session_revoked'));

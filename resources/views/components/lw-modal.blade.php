@@ -27,6 +27,9 @@
         aria-modal="true"
         @if ($title) aria-label="{{ $title }}" @endif
         @if ($close) wire:keydown.escape.window="{{ $close }}" @endif
+        x-data
+        x-init="$nextTick(() => focusFirstIn($el))"
+        x-on:keydown.tab="trapTab($el, $event)"
     >
         @if ($close)
             <button type="button" class="fixed inset-0 cursor-default bg-navy-deep/60" wire:click="{{ $close }}" aria-label="{{ __('common.close') }}" tabindex="-1"></button>
@@ -34,7 +37,7 @@
             <div class="fixed inset-0 bg-navy-deep/60" aria-hidden="true"></div>
         @endif
 
-        <div class="relative max-h-[92dvh] w-full {{ $width }} overflow-y-auto rounded-t-2xl bg-cream p-6 shadow-xl sm:rounded-2xl">
+        <div class="relative max-h-[92dvh] w-full {{ $width }} overflow-y-auto rounded-t-2xl bg-cream p-6 shadow-xl sm:rounded-2xl" data-modal-panel>
             <div class="flex items-start justify-between gap-4">
                 @if ($title)
                     <h2 class="text-lg font-bold text-navy">{{ $title }}</h2>
@@ -43,8 +46,9 @@
                 @if ($close)
                     <button
                         type="button"
-                        class="-m-2 flex size-10 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-navy/5 hover:text-navy"
+                        class="-m-2 flex size-10 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-navy/5 hover:text-navy focus-visible:outline-2 focus-visible:outline-gold"
                         wire:click="{{ $close }}"
+                        data-modal-close
                         aria-label="{{ __('common.close') }}"
                     >
                         <svg class="size-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">

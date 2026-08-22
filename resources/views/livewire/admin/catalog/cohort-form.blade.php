@@ -72,6 +72,12 @@
         <div class="mx-auto flex max-w-3xl flex-row-reverse items-center justify-start gap-2">
             <x-button type="submit" form="cohort-form" target="save" :loading-label="__('common.saving')">{{ __('common.save') }}</x-button>
             <x-button variant="ghost" :href="route('admin.cohorts')" wire:navigate>{{ __('common.cancel') }}</x-button>
+            <span
+                wire:dirty
+                data-dirty-marker
+                data-confirm="{{ __('common.leave_unsaved_confirm') }}"
+                class="me-auto text-xs font-medium text-warning"
+            >{{ __('common.unsaved_changes') }}</span>
         </div>
     </div>
 </div>

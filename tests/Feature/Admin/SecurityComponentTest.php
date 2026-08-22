@@ -33,7 +33,8 @@ it('revokes one of the user own sessions', function () {
 
     Livewire::actingAs($user)
         ->test(Security::class)
-        ->call('revoke', 'other-session-id');
+        ->call('confirmRevoke', 'other-session-id')
+        ->call('revoke');
 
     expect(DB::table('sessions')->where('id', 'other-session-id')->exists())->toBeFalse();
 });
@@ -47,7 +48,8 @@ it('cannot revoke another user session — the query is scoped', function () {
 
     Livewire::actingAs($user)
         ->test(Security::class)
-        ->call('revoke', 'victim-session-id');
+        ->call('confirmRevoke', 'victim-session-id')
+        ->call('revoke');
 
     expect(DB::table('sessions')->where('id', 'victim-session-id')->exists())->toBeTrue();
 });

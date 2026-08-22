@@ -36,9 +36,17 @@
                                     class="me-1"
                                     aria-label="{{ $category->is_active ? __('courses.active') : __('courses.inactive') }}"
                                 >
-                                    <x-badge :variant="$category->is_active ? 'success' : 'neutral'">
-                                        {{ $category->is_active ? __('courses.active') : __('courses.inactive') }}
-                                    </x-badge>
+                                    {{-- تفاؤلي: الحالة المعاكسة تظهر فور النقر --}}
+                                    <span wire:loading.remove wire:target="toggleActive({{ $category->id }})">
+                                        <x-badge :variant="$category->is_active ? 'success' : 'neutral'">
+                                            {{ $category->is_active ? __('courses.active') : __('courses.inactive') }}
+                                        </x-badge>
+                                    </span>
+                                    <span wire:loading wire:target="toggleActive({{ $category->id }})">
+                                        <x-badge :variant="$category->is_active ? 'neutral' : 'success'">
+                                            {{ $category->is_active ? __('courses.inactive') : __('courses.active') }}
+                                        </x-badge>
+                                    </span>
                                 </button>
 
                                 <x-button variant="ghost" size="sm" wire:click="edit({{ $category->id }})">{{ __('common.edit') }}</x-button>

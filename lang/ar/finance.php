@@ -142,6 +142,7 @@ return [
     'report_aging' => 'أعمار الذمم المدينة',
     'report_annual' => 'الملخص السنوي للشريك',
     'report_vat' => 'مراقب حد القيمة المضافة',
+    'basis_label' => 'أساس القياس',
     'basis_accrual' => 'أساس الاستحقاق',
     'basis_cash' => 'الأساس النقدي',
     'period_from' => 'من',

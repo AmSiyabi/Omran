@@ -54,6 +54,8 @@
                             size="sm"
                             wire:click="confirmTransition('{{ $transition->value }}')"
                             wire:key="transition-{{ $transition->value }}"
+                            wire:loading.attr="disabled"
+                            wire:target="confirmTransition"
                         >
                             {{ $transition === \App\Enums\CohortStatus::Cancelled ? __('courses.cancel_cohort') : __('courses.transition_to', ['status' => $transition->label()]) }}
                         </x-button>

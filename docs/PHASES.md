@@ -368,3 +368,51 @@ RTL grep clean · assets build clean.
 - CIT reduced-rate eligibility estimated by income limit only; the other
   statutory conditions are surfaced as an assumption in the UI.
 - El Messiri unusable in mPDF → PDFs are Tajawal-only — D-045.
+
+## Phase 7 — Mobile polish and UX completion ✅
+
+**Completed:** 2026-08-22
+
+### Built
+- **Responsive audit**: all 16 admin screens walked at 375px — the
+  mobile-first build meant zero table conversions were owed except the four
+  wide report tables, which now render as card lists below 768px (the
+  `<table>` partials remain for md+ screens and mPDF).
+- **Nav chrome**: bottom nav + FAB existed; added the settings sticky save
+  bar (course/cohort forms already had them) and a sidebar palette button.
+- **Loading states**: every submit already used `x-button :target`
+  spinners; added per-item loading to cohort status transitions and bulk
+  approve. **Skeletons**: Dashboard, ReportsHub, and FinanceHub are now
+  `#[Lazy]` with skeleton placeholder views — no blank loading areas.
+- **Destructive confirmations**: the one gap (session revoke) now confirms
+  in a modal naming the browser/IP; all others already named their target.
+- **wire:dirty guards**: course, cohort, and settings forms show an
+  "unsaved changes" marker and confirm before navigate/close.
+- **Optimistic UI**: attendance cycle, category active, and course publish
+  flip instantly via the wire:loading next-state pattern (D-048).
+- **Command palette**: Ctrl+K/Cmd+K — permission-filtered navigation,
+  course/cohort search, arrow-key + Enter navigation (Livewire + Alpine).
+- **Keyboard & focus**: focus traps + auto-focus in both modal components,
+  visible gold focus rings, Esc closes everywhere.
+- **PWA**: manifest (Arabic name «مركز عمران للتدريب والاستشارات», RTL,
+  brand navy/cream, 4 icons incl. maskable from the brand star), static-
+  asset-only service worker, apple-touch-icon (D-049).
+
+### Acceptance results
+| Criterion | Result |
+|---|---|
+| Every screen usable one-handed at 375px | ✅ 16 screens, 0px overflow each (screenshots) — **real-device walk: owner to verify on phone** |
+| Every submit button has a loading state | ✅ checklist walk (audit) + gaps closed |
+| Destructive confirmations name the target | ✅ session revoke added; all others already compliant |
+| No blank loading areas | ✅ skeletons on all three lazy screens |
+| PWA installs with Arabic name/icon | ✅ manifest+SW verified in Chrome — **iOS/Android install: owner to verify on device** |
+| Full keyboard nav, visible focus, RTL order | ✅ palette drive-through + modal trap 6/6 tabs inside |
+| Axe scan: no critical/serious | ✅ 16/16 screens clean (was 9 failures → 4 token darkenings + 7 aria-labels, D-047) |
+
+**Checks:** Pint clean · Larastan level 6, 0 errors · Pest **205/205**
+(12,633 assertions) · RTL grep clean · phase7-checks.mjs ALL PASSED.
+
+### Notes / deviations
+- Brand soft-state colors darkened for AA contrast — D-047.
+- Optimistic UI implemented server-authoritative — D-048.
+- PWA scoped to admin; service worker never caches pages/data — D-049.

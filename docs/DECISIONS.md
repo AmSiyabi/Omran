@@ -378,3 +378,36 @@ cast serializes through `Y-m-d H:i:s`; MySQL DATE truncates it, but sqlite
 `Y-m-d` upper bound of every `whereBetween` and vanished from reports.
 `entry_date` now uses `DateOnlyCast`, which stores exactly `Y-m-d` on every
 driver.
+
+---
+
+## 2026-08-22 — Phase 7
+
+### D-047 · Brand palette darkened for WCAG AA — axe-driven
+The axe scan failed on four tokens sitting just under 4.5:1 on their soft
+backgrounds: muted #6a7383 (4.16 on cream), warning #a06d1e (3.8), success
+#2e7d5b (4.33), and gold-deep as 12px nav text (3.14 on white). Each was
+darkened tonally — same hue, deeper shade: muted→#5b6474, warning→#855a15,
+success→#276b4e, plus a new `gold-ink` #8a6528 token reserved for small
+gold text on light backgrounds. The display golds (`gold`, `gold-light`,
+`gold-deep`) are untouched — headings, icons, and large text keep the brand
+warmth; only body-size text tokens changed.
+
+### D-048 · Optimistic toggles via wire:loading next-state, no client state
+Toggles (attendance status cycle, category active, course publish) show the
+*next* state instantly by rendering both badges server-side and swapping
+them with per-item `wire:loading` targeting. The flip is visually
+immediate, and the server response is always authoritative — no Alpine
+state duplication, so client and ledger truth can never drift. Chosen over
+true client-side optimism because financial/attendance data must never
+show a state the server hasn't confirmed for longer than one round-trip.
+
+### D-049 · PWA is the admin app; the service worker never caches pages
+The manifest (start_url /admin, Arabic name, RTL) and service-worker
+registration live in the base/admin layouts only — the public site doesn't
+register a worker. The worker caches static prefixes (/build, /fonts,
+/images) cache-first and passes everything else straight to the network:
+admin HTML, Livewire endpoints, and financial data are never cached, so a
+stale ledger view is impossible. Lazy full-page components (#[Lazy] on
+Dashboard/ReportsHub/FinanceHub) authorize at hydration; tests disable
+lazy loading globally in Pest.php to keep asserting mount authorization.
